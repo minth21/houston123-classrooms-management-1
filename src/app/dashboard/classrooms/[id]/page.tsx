@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { classroomService, Attendance } from "@/lib/api/classroom";
+import {
+  classroomService,
+  type Attendance,
+  type RecordingSettings,
+} from "@/lib/api/classroom";
 import { Toaster, toast } from "sonner";
 import {
   Card,
@@ -40,10 +44,12 @@ import {
   MessageSquare,
   ChevronLeft,
   Users,
+  Video,
 } from "lucide-react";
 import Link from "next/link";
 import DashboardHeader from "@/components/dashboard-header";
 import Loader from "@/components/loader";
+import { RecordingSettingsDialog } from "@/components/recording-settings-dialog";
 
 interface DiaryEntry {
   id: string;
@@ -55,20 +61,33 @@ interface DiaryEntry {
 
 export default function ClassroomDetailPage() {
   const params = useParams();
-  const classId = params.id as string;
-
+  const classId = typeof params.id === "string" ? params.id : Array.isArray(params.id) ? params.id[0] : "";
   const [attendance, setAttendance] = useState<Attendance[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [commentText, setCommentText] = useState("");
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [diaryContent, setDiaryContent] = useState("");
-  const [diaryFiles, setDiaryFiles] = useState<File[]>([]);
   const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([]);
-  const [selectedAttendance, setSelectedAttendance] = useState<string | null>(
-    null
-  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [diaryFiles, setDiaryFiles] = useState<File[]>([]);
+  const [diaryContent, setDiaryContent] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [commentText, setCommentText] = useState("");
+  const [selectedAttendance, setSelectedAttendance] = useState<string>("");
+  const [recordingSettings, setRecordingSettings] = useState<RecordingSettings>();
+
+  const handleSaveRecordingSettings = async (settings: RecordingSettings) => {
+    try {
+      setIsSubmitting(true);
+      // Tạm thời chỉ lưu vào state, trong thực tế bạn sẽ gọi API để lưu
+      setRecordingSettings(settings);
+      toast.success("Đã lưu cấu hình ghi hình thành công");
+    } catch (error) {
+      console.error("Error saving recording settings:", error);
+      toast.error("Có lỗi xảy ra khi lưu cấu hình ghi hình");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Fetch attendance data
   const fetchAttendanceData = async () => {
     try {
@@ -202,7 +221,6 @@ export default function ClassroomDetailPage() {
       <DashboardHeader
         title={currentClassData.classId}
         description={currentClassData.subjectName}
-        onBranchSelect={handleBranchSelect}
       />
 
       {/* Classroom Info Card */}
@@ -238,7 +256,7 @@ export default function ClassroomDetailPage() {
                   {currentClassData.roomId || "N/A"}
                 </p>
               </div>
-            </div>
+            </div>            
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-green-100 p-3 text-green-600">
                 <Users className="h-5 w-5" />
@@ -246,8 +264,31 @@ export default function ClassroomDetailPage() {
               <div>
                 <p className="text-sm font-medium">Giáo viên</p>
                 <p className="text-sm text-gray-500">
-                  {currentClassData.staffName || "N/A"}
+                  {currentClassData.staffName ? (
+                    <Link 
+                      href={`/dashboard/teachers/${currentClassData.staffId}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      {currentClassData.staffName}
+                    </Link>
+                  ) : (
+                    "N/A"
+                  )}
                 </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-purple-100 p-3 text-purple-600">
+                <Video className="h-5 w-5" />
+              </div>
+              <div className="flex items-center gap-3">
+                <div>
+                  <p className="text-sm font-medium">Ghi hình</p>
+                  <RecordingSettingsDialog
+                    settings={recordingSettings}
+                    onSave={handleSaveRecordingSettings}
+                  />
+                </div>
               </div>
             </div>
           </div>
