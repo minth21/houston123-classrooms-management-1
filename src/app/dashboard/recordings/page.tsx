@@ -13,7 +13,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 interface Recording {
   id: string;
   stream: MediaStream;
-  recorder: MediaRecorder;
+recorder: MediaRecorder;
   isRecording: boolean;
   videoURL: string | null;
   type: "webcam" | "screen"; // Thêm type để phân biệt loại ghi hình

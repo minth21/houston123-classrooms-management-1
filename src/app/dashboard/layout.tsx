@@ -228,11 +228,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           icon: <List className="h-4 w-4" />,
         },
         {
-          name: "Lịch học",
-          path: "/dashboard/schedule",
-          icon: <Calendar className="h-4 w-4" />,
-        },
-        {
           name: "Ghi hình",
           path: "/dashboard/recordings",
           icon: <Video className="h-4 w-4" />,
@@ -241,8 +236,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       badge: "New",
     },
     {
-      name: "Học viên",
-      path: "/dashboard/students",
+      name: "Giảng viên",
+      path: "/dashboard/teachers",
       icon: <Users className="h-5 w-5" />,
     },
     {
