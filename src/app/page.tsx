@@ -3,9 +3,6 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 
 export default function Home() {
   const { isAuthenticated, isLoading } = useAuth();

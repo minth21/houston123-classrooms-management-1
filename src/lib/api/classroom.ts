@@ -1,6 +1,18 @@
 import api from "./axios";
 import { companyService } from "./company";
 
+export interface RecordingSettings {
+  resolution: string; // e.g. "1920x1080", "1280x720"
+  bitrate: number; // in kbps
+  fps: number;
+  codec: string; // e.g. "h264", "vp8"
+  audioQuality: {
+    bitrate: number; // in kbps
+    sampleRate: number; // e.g. 44100, 48000
+    channels: number; // 1 for mono, 2 for stereo
+  };
+}
+
 export interface Classroom {
   _id: string;
   classID: string;
@@ -46,6 +58,7 @@ export interface Classroom {
   salary?: {
     __v: number;
   };
+  recordingSettings?: RecordingSettings; // Add recording settings
 }
 
 export interface Attendance {
