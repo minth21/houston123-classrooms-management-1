@@ -122,16 +122,16 @@ export const teacherService = {
     let branchId: string;
 
     // First try to get branch from cached branches
-    const cachedBranches: any = companyService.getCachedBranches();
+    const cachedBranches: any = await companyService.getBranches(companyId);
     console.log("Cached branches:", cachedBranches);
 
     // Access the branches array correctly from the cached data structure
-    const branches = cachedBranches?.data?.[companyId];
-    if (!Array.isArray(branches)) {
-      throw new Error("No branches found for the selected company");
-    }
+    // const branches = cachedBranches?.data?.[companyId];
+    // if (!Array.isArray(branches)) {
+    //   throw new Error("No branches found for the selected company");
+    // }
 
-    const branch = branches.find((b: any) => b.code === branchCode);
+    const branch = cachedBranches.find((b: any) => b.code === branchCode);
     branchId = branch?._id;
 
     if (!branchId) {
