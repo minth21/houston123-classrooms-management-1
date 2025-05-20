@@ -155,19 +155,19 @@ export default function SchedulePage() {
   };
 
   const getActiveClassCount = () => {
-    return classrooms.filter((c) => c.isActive).length;
+    return filteredClassrooms.filter((c) => c.isActive).length;
   };
 
   const getTodayClassCount = () => {
     const today = new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
-    return classrooms.filter((classroom) => {
+    return filteredClassrooms.filter((classroom) => {
       if (!classroom.schedule) return false;
       return classroom.schedule.some((s) => s.dayOfWeek === today);
     }).length;
   };
 
   const getTotalStudentsCount = () => {
-    return classrooms.reduce(
+    return filteredClassrooms.reduce(
       (sum, classroom) => sum + (classroom.studentNumber || 0),
       0
     );
@@ -176,7 +176,7 @@ export default function SchedulePage() {
   const getTeachersCount = () => {
     // Get unique teachers
     const teachers = new Set();
-    classrooms.forEach((classroom) => {
+    filteredClassrooms.forEach((classroom) => {
       if (classroom.teacherName) teachers.add(classroom.teacherName);
     });
     return teachers.size;
@@ -186,80 +186,9 @@ export default function SchedulePage() {
     <div className="space-y-6">
       {" "}
       <DashboardHeader
-        title="Lịch học"
-        description="Xem và quản lý lịch học của tất cả lớp"
+        title="Lịch giảng dạy"
+        description="Xem lịch giảng dạy của các lớp học"
       />
-      {!isLoading && !error && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="rounded-full bg-blue-100 p-3 text-blue-600">
-                  <Calendar className="h-6 w-6" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Lớp đang hoạt động
-                  </p>
-                  <h3 className="text-2xl font-bold">
-                    {getActiveClassCount()}
-                  </h3>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="rounded-full bg-amber-100 p-3 text-amber-600">
-                  <Clock className="h-6 w-6" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Lớp học hôm nay
-                  </p>
-                  <h3 className="text-2xl font-bold">{getTodayClassCount()}</h3>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="rounded-full bg-green-100 p-3 text-green-600">
-                  <Users className="h-6 w-6" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Tổng số học sinh
-                  </p>
-                  <h3 className="text-2xl font-bold">
-                    {getTotalStudentsCount()}
-                  </h3>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="rounded-full bg-purple-100 p-3 text-purple-600">
-                  <BookOpen className="h-6 w-6" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Giáo viên
-                  </p>
-                  <h3 className="text-2xl font-bold">{getTeachersCount()}</h3>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
       {/* Search bar */}
       {!isLoading && !error && (
         <Card className="mb-4">

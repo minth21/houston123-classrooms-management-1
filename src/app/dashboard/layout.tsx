@@ -154,9 +154,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       router.refresh();
 
       // If we need a stronger reset, use window.location.reload()
-      // if (typeof window !== 'undefined') {
-      //   window.location.reload();
-      // }
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
     }
   }, [needsReload, router]);
 
@@ -228,27 +228,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           icon: <List className="h-4 w-4" />,
         },
         {
-          name: "Lịch học",
-          path: "/dashboard/schedule",
-          icon: <Calendar className="h-4 w-4" />,
-        },
-        {
           name: "Ghi hình",
           path: "/dashboard/recordings",
           icon: <Video className="h-4 w-4" />,
         },
       ],
       badge: "New",
-    },
-    {
-      name: "Học viên",
-      path: "/dashboard/students",
-      icon: <Users className="h-5 w-5" />,
-    },
-    {
-      name: "Cài đặt",
-      path: "/dashboard/settings",
-      icon: <Settings className="h-5 w-5" />,
     },
   ];
 

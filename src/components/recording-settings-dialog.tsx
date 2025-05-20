@@ -11,7 +11,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RecordingSettings } from "@/lib/api/classroom";
 import { useState } from "react";
 
@@ -52,7 +58,10 @@ const defaultSettings: RecordingSettings = {
   },
 };
 
-export function RecordingSettingsDialog({ settings, onSave }: RecordingSettingsDialogProps) {
+export function RecordingSettingsDialog({
+  settings,
+  onSave,
+}: RecordingSettingsDialogProps) {
   const [currentSettings, setCurrentSettings] = useState<RecordingSettings>(
     settings || defaultSettings
   );
@@ -102,7 +111,10 @@ export function RecordingSettingsDialog({ settings, onSave }: RecordingSettingsD
             <Select
               value={currentSettings.fps.toString()}
               onValueChange={(value) =>
-                setCurrentSettings((prev) => ({ ...prev, fps: parseInt(value, 10) }))
+                setCurrentSettings((prev) => ({
+                  ...prev,
+                  fps: parseInt(value, 10),
+                }))
               }
             >
               <SelectTrigger>

@@ -22,19 +22,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { classroomService, Classroom } from "@/lib/api/classroom";
+import { useStaff } from "@/context/staff-context";
 import DashboardHeader from "@/components/dashboard-header";
 import Loader from "@/components/loader";
-import {
-  Search,
-  Calendar,
-  Clock,
-  ChevronRight,
-  ExternalLink,
-  Users,
-} from "lucide-react";
+import { Search, Calendar, Clock, ChevronRight, Users } from "lucide-react";
 
 export default function ClassroomsPage() {
   const router = useRouter();
+  const { staff } = useStaff();
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [filteredClassrooms, setFilteredClassrooms] = useState<Classroom[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -47,17 +42,27 @@ export default function ClassroomsPage() {
     null
   );
   const [isTimeDialogOpen, setIsTimeDialogOpen] = useState(false);
-
-  // Load classrooms based on the selected branch
+  // Load classrooms based on the selected branch and staff role
   const loadClassrooms = async () => {
     try {
       setIsLoading(true);
       setError(null);
+
+      if (!staff) {
+        setError("Staff information not available");
+        return;
+      }
+
       const data = await classroomService.getClassrooms();
-      setClassrooms(data);
-      setFilteredClassrooms(data);
-      if (data.length > 0) {
-        applyFilters(data, searchQuery, filterParam || "all");
+      const filteredData = data.filter(
+        (c) =>
+          c.teacherCode === staff.userId
+      );
+
+      setClassrooms(filteredData);
+      setFilteredClassrooms(filteredData);
+      if (filteredData.length > 0) {
+        applyFilters(filteredData, searchQuery, filterParam || "all");
       }
     } catch (err: any) {
       if (err.message === "Please select a company and branch first") {
@@ -70,25 +75,19 @@ export default function ClassroomsPage() {
       setIsLoading(false);
     }
   };
-
-  // Check authentication and branch selection only once on mount
+  // Check authentication and branch selection when staff data is available
   useEffect(() => {
     const checkBranchAndLoad = () => {
       const branch = localStorage.getItem("selectedBranch");
       const company = localStorage.getItem("selectedCompany");
-      if (branch && company) {
+      if (branch && company && staff) {
+        console.log("Loading classrooms with staff:", staff);
         setBranchSelected(true);
         loadClassrooms();
       }
     };
     checkBranchAndLoad();
-  }, []);
-
-  // Handle branch selection
-  const handleBranchSelect = () => {
-    setBranchSelected(true);
-    loadClassrooms();
-  };
+  }, [staff]); // Add staff as a dependency
 
   // Apply filters to the classrooms data
   const applyFilters = (data: Classroom[], query: string, tab: string) => {

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useStaff } from "@/context/staff-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Classroom } from "@/lib/api/classroom";
@@ -64,6 +65,23 @@ interface ScheduledClass {
   day: number;
   color: string;
   studentCount?: number;
+  status?: "upcoming" | "past" | "current";
+}
+
+interface ValidSchedule {
+  classRoomCode: string | null;
+  dayOfWeek: number;
+  beginTime: string;
+  finishTime: string;
+  validFrom: Date | null;
+  validTo: Date | null;
+  type: "schedule" | "schoolShift";
+}
+
+interface CombinedSchedule extends ScheduledClass {
+  validFrom?: Date | null;
+  validTo?: Date | null;
+  type: "schedule" | "schoolShift";
 }
 
 type CalendarView = "day" | "week" | "month" | "list";
@@ -74,6 +92,7 @@ interface ClassScheduleCalendarProps {
   initialDate?: Date;
   onViewChange?: (view: CalendarView) => void;
   onDateChange?: (date: Date) => void;
+  showAllClasses?: boolean;
 }
 
 export default function ClassScheduleCalendar({
@@ -82,6 +101,7 @@ export default function ClassScheduleCalendar({
   initialDate = new Date(),
   onViewChange,
   onDateChange,
+  showAllClasses = false,
 }: ClassScheduleCalendarProps) {
   const [date, setDate] = useState<Date>(initialDate);
   const [view, setView] = useState<CalendarView>(initialView);
@@ -94,6 +114,9 @@ export default function ClassScheduleCalendar({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [displayDates, setDisplayDates] = useState<Date[]>([]);
   const [calendarIsOpen, setCalendarIsOpen] = useState(false);
+  const [autoTransition, setAutoTransition] = useState(false);
+  const autoTransitionInterval = useRef<NodeJS.Timeout | undefined>(undefined);
+  const { staff, loading: staffLoading } = useStaff();
 
   // Enhanced color palette with better contrast and more distinct colors
   const colors = [
@@ -107,12 +130,19 @@ export default function ClassScheduleCalendar({
     "bg-teal-100 text-teal-800 border-teal-300 hover:bg-teal-200",
     "bg-fuchsia-100 text-fuchsia-800 border-fuchsia-300 hover:bg-fuchsia-200",
     "bg-lime-100 text-lime-800 border-lime-300 hover:bg-lime-200",
-  ];
-
-  // Handle date change with callback
+  ]; // Handle date change with callback
   const handleDateChange = (newDate: Date) => {
-    setDate(newDate);
-    onDateChange?.(newDate);
+    const updatedDate = new Date(newDate);
+    setDate(updatedDate);
+
+    // Trigger the callback to allow parent component to refresh data
+    onDateChange?.(updatedDate);
+
+    // Clear and re-process schedules immediately when date changes
+    setScheduledClasses([]);
+    if (!staffLoading && classrooms) {
+      processSchedules(classrooms);
+    }
   };
 
   // Handle view change with callback
@@ -120,51 +150,81 @@ export default function ClassScheduleCalendar({
     setView(newView);
     onViewChange?.(newView);
   };
+  // Process classrooms into scheduled classes
+  const processSchedules = (classroomsToProcess: Classroom[]) => {
+    const subjectColorMap = new Map();
+    const processed: CombinedSchedule[] = [];
 
-  // Process classrooms to extract scheduled classes
-  useEffect(() => {
-    const processSchedules = () => {
-      // Create a map to keep track of colors by subject to maintain consistency
-      const subjectColorMap = new Map();
-      const processed: ScheduledClass[] = [];
+    classroomsToProcess.forEach((classroom) => {
+      // Check if user has access to this classroom
+      if (
+        !(showAllClasses ||
+        (!staffLoading && staff && 
+         (classroom.teacherCode === staff?.userId || 
+          (classroom.supporter && classroom.supporter.includes(staff?.userId)))))
+      ) {
+        return;
+      }
 
-      classrooms.forEach((classroom) => {
-        if (classroom.schedule && classroom.schedule.length > 0) {
-          classroom.schedule.forEach((schedule, index) => {
-            if (
-              schedule.dayOfWeek !== undefined &&
-              schedule.beginTime &&
-              schedule.finishTime
-            ) {
-              // Assign a consistent color based on subject name
-              let color = subjectColorMap.get(classroom.subjectName);
-              if (!color) {
-                color = colors[subjectColorMap.size % colors.length];
-                subjectColorMap.set(classroom.subjectName, color);
-              }
-
-              processed.push({
-                id: `${classroom.classID}-${index}`,
-                classId: classroom.classID,
-                subjectName: classroom.subjectName,
-                roomId: schedule.classRoomCode || "N/A",
-                teacherName: classroom.teacherName || "N/A",
-                startTime: schedule.beginTime,
-                endTime: schedule.finishTime,
-                day: schedule.dayOfWeek,
-                color,
-                studentCount: classroom.studentNumber || 0,
-              });
-            }
-          });
+      // Get all valid schedules for this classroom
+      const validSchedules = getCombinedSchedules(classroom);
+      
+      if (validSchedules.length > 0) {
+        // Assign a consistent color based on subject name
+        let color = subjectColorMap.get(classroom.subjectName);
+        if (!color) {
+          color = colors[subjectColorMap.size % colors.length];
+          subjectColorMap.set(classroom.subjectName, color);
         }
-      });
 
-      setScheduledClasses(processed);
-    };
+        validSchedules.forEach((schedule, index) => {
+          // Check if the schedule is valid for the current date range
+          if (!isDateInRange(date, schedule.validFrom, schedule.validTo)) {
+            return;
+          }
 
-    processSchedules();
-  }, [classrooms]);
+          const status = isUpcoming(schedule.beginTime, schedule.dayOfWeek);
+          if (status === "past") {
+            return;
+          }
+
+          processed.push({
+            id: `${classroom.classID}-${index}-${schedule.type}`,
+            classId: classroom.classID,
+            subjectName: classroom.subjectName,
+            roomId: schedule.classRoomCode || "N/A",
+            teacherName: classroom.teacherName || "N/A",
+            startTime: schedule.beginTime,
+            endTime: schedule.finishTime,
+            day: schedule.dayOfWeek,
+            color,
+            studentCount: classroom.studentNumber || 0,
+            status,
+            validFrom: schedule.validFrom,
+            validTo: schedule.validTo,
+            type: schedule.type
+          });
+        });
+      }
+    });
+
+    setScheduledClasses(processed);
+  };
+  // Process classrooms to extract scheduled classes whenever dependencies change
+  useEffect(() => {
+    if (!staffLoading && classrooms) {
+      setScheduledClasses([]); // Clear existing schedules
+      processSchedules(classrooms);
+    }
+  }, [classrooms, staff, staffLoading, showAllClasses, date]);
+
+  // Re-process schedules when date changes
+  useEffect(() => {
+    if (classrooms && classrooms.length > 0) {
+      setScheduledClasses([]); // Clear existing schedules
+      processSchedules(classrooms);
+    }
+  }, [date]);
 
   // Update display dates based on selected date and view
   useEffect(() => {
@@ -226,6 +286,42 @@ export default function ClassScheduleCalendar({
       setDisplayDates(weekDates);
     }
   }, [date, view]);
+
+  useEffect(() => {
+    if (autoTransition) {
+      // Clear any existing interval
+      if (autoTransitionInterval.current) {
+        clearInterval(autoTransitionInterval.current);
+      }
+
+      // Set new interval to transition every 5 seconds
+      autoTransitionInterval.current = setInterval(() => {
+        const newDate = new Date(date);
+        if (view === "day") {
+          newDate.setDate(date.getDate() + 1);
+        } else if (view === "week") {
+          newDate.setDate(date.getDate() + 7);
+        } else if (view === "month") {
+          newDate.setMonth(date.getMonth() + 1);
+        }
+        setDate(newDate);
+        onDateChange?.(newDate);
+      }, 5000);
+    } else {
+      // Clear interval when auto-transition is disabled
+      if (autoTransitionInterval.current) {
+        clearInterval(autoTransitionInterval.current);
+        autoTransitionInterval.current = undefined;
+      }
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (autoTransitionInterval.current) {
+        clearInterval(autoTransitionInterval.current);
+      }
+    };
+  }, [autoTransition, date, view, onDateChange]);
 
   const handleClassClick = (classItem: ScheduledClass) => {
     setSelectedClass(classItem);
@@ -409,29 +505,20 @@ export default function ClassScheduleCalendar({
                               onClick={() => handleClassClick(classItem)}
                             >
                               <div className="space-y-0.5">
-                                <div className="font-medium text-xs leading-tight truncate">
+                                <div className="font-medium truncate">
                                   {classItem.subjectName}
                                 </div>
-                                <div className="text-xs truncate flex items-center">
-                                  <Clock className="inline-block h-3 w-3 mr-1 opacity-70" />
+                                <div className="text-xs truncate">
+                                  {classItem.classId}
+                                </div>
+                                <div className="text-xs truncate">
                                   {formatTime(classItem.startTime)} -{" "}
                                   {formatTime(classItem.endTime)}
                                 </div>
-                                <div className="text-xs truncate flex items-center">
-                                  <BookOpen className="inline-block h-3 w-3 mr-1 opacity-70" />
-                                  {classItem.classId}
-                                </div>
-                                {duration > 0.75 && (
-                                  <>
-                                    <div className="text-xs truncate flex items-center">
-                                      <MapPin className="inline-block h-3 w-3 mr-1 opacity-70" />
-                                      {classItem.roomId}
-                                    </div>
-                                    <div className="text-xs truncate flex items-center">
-                                      <Users className="inline-block h-3 w-3 mr-1 opacity-70" />
-                                      {classItem.studentCount || "N/A"}
-                                    </div>
-                                  </>
+                                {classItem.status === "upcoming" && (
+                                  <Badge variant="outline" className="mt-1">
+                                    Sắp tới
+                                  </Badge>
                                 )}
                               </div>
                             </div>
@@ -459,6 +546,13 @@ export default function ClassScheduleCalendar({
                                   {formatTime(classItem.startTime)} -{" "}
                                   {formatTime(classItem.endTime)}
                                 </p>
+                                {classItem.status && (
+                                  <Badge variant="outline">
+                                    {classItem.status === "upcoming"
+                                      ? "Sắp tới"
+                                      : classItem.status}
+                                  </Badge>
+                                )}
                               </div>
                             </div>
                           </TooltipContent>
@@ -603,6 +697,13 @@ export default function ClassScheduleCalendar({
                             {formatTime(classItem.startTime)} -{" "}
                             {formatTime(classItem.endTime)}
                           </p>
+                          {classItem.status && (
+                            <Badge variant="outline">
+                              {classItem.status === "upcoming"
+                                ? "Sắp tới"
+                                : classItem.status}
+                            </Badge>
+                          )}
                         </div>
                       </TooltipContent>
                     </Tooltip>
@@ -836,9 +937,7 @@ export default function ClassScheduleCalendar({
             {" "}
             <Tabs
               value={view}
-              onValueChange={(value) =>
-                handleViewChange(value as CalendarView)
-              }
+              onValueChange={(value) => handleViewChange(value as CalendarView)}
               className="w-fit"
             >
               <TabsList>
@@ -895,7 +994,8 @@ export default function ClassScheduleCalendar({
             <div className="flex gap-1">
               <Button
                 variant="outline"
-                size="icon"                onClick={() => {
+                size="icon"
+                onClick={() => {
                   const newDate = new Date(date);
                   if (view === "day") newDate.setDate(newDate.getDate() - 1);
                   else if (view === "week")
@@ -911,7 +1011,8 @@ export default function ClassScheduleCalendar({
               </Button>
               <Button
                 variant="outline"
-                size="sm"                onClick={() => {
+                size="sm"
+                onClick={() => {
                   const newDate = new Date();
                   handleDateChange(newDate);
                 }}
@@ -921,7 +1022,8 @@ export default function ClassScheduleCalendar({
               </Button>
               <Button
                 variant="outline"
-                size="icon"                onClick={() => {
+                size="icon"
+                onClick={() => {
                   const newDate = new Date(date);
                   if (view === "day") newDate.setDate(newDate.getDate() + 1);
                   else if (view === "week")
@@ -1025,3 +1127,136 @@ export default function ClassScheduleCalendar({
     </Card>
   );
 }
+
+// Helper function to determine if a class is upcoming
+const isUpcoming = (classTime: string, dayOfWeek: number) => {
+  const now = new Date();
+  const today = now.getDay();
+  const [hours, minutes] = classTime.split(":").map(Number);
+  const classDate = new Date();
+
+  // If the class is in past days of the week
+  if (dayOfWeek < today) {
+    return "past";
+  }
+
+  // If the class is later in the week
+  if (dayOfWeek > today) {
+    return "upcoming";
+  }
+
+  // If the class is today, check the time
+  if (dayOfWeek === today) {
+    const currentHour = now.getHours();
+    const currentMinutes = now.getMinutes();
+
+    // Compare times
+    if (
+      hours > currentHour ||
+      (hours === currentHour && minutes > currentMinutes)
+    ) {
+      return "upcoming";
+    } else {
+      return "past";
+    }
+  }
+
+  return "past";
+};
+
+const isScheduleValid = (classroom: Classroom, scheduleDate: Date) => {
+  // Kiểm tra ngày bắt đầu và kết thúc
+  const startDate = classroom.startDate ? new Date(classroom.startDate) : null;
+  const finishDate = classroom.finishDate
+    ? new Date(classroom.finishDate)
+    : null;
+  const currentDate = new Date(scheduleDate);
+
+  // Nếu không có ngày bắt đầu hoặc kết thúc, coi như hợp lệ
+  if (!startDate || !finishDate) return true;
+
+  // Reset time để so sánh chỉ ngày
+  currentDate.setHours(0, 0, 0, 0);
+  startDate.setHours(0, 0, 0, 0);
+  finishDate.setHours(0, 0, 0, 0);
+
+  // Kiểm tra xem ngày hiện tại có nằm trong khoảng hợp lệ
+  return currentDate >= startDate && currentDate <= finishDate;
+};
+
+const isDateInRange = (
+  date: Date,
+  startDate: Date | null,
+  endDate: Date | null
+): boolean => {
+  if (!startDate || !endDate) return true;
+
+  const checkDate = new Date(date);
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  // Reset time components for date comparison
+  checkDate.setHours(0, 0, 0, 0);
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+
+  return checkDate >= start && checkDate <= end;
+};
+
+const getCombinedSchedules = (classroom: Classroom): ValidSchedule[] => {
+  const validSchedules: ValidSchedule[] = [];
+
+  // Process schoolShift schedules
+  if (classroom.schoolShift && classroom.schoolShift.length > 0) {
+    classroom.schoolShift.forEach((shift) => {
+      if (shift.day !== undefined && shift.startTime && shift.endTime) {
+        validSchedules.push({
+          classRoomCode: shift.roomId || null,
+          dayOfWeek: shift.day,
+          beginTime: shift.startTime,
+          finishTime: shift.endTime,
+          validFrom: shift.date ? new Date(shift.date) : null,
+          validTo: shift.expiryDate ? new Date(shift.expiryDate) : null,
+          type: "schoolShift",
+        });
+      }
+    });
+  }
+
+  // Process regular schedules
+  if (classroom.schedule && classroom.schedule.length > 0) {
+    classroom.schedule.forEach((schedule) => {
+      if (
+        schedule.dayOfWeek !== undefined &&
+        schedule.beginTime &&
+        schedule.finishTime
+      ) {
+        // Check if there's already a schoolShift entry for this time slot
+        const hasOverlap = validSchedules.some(
+          (vs) =>
+            vs.dayOfWeek === schedule.dayOfWeek &&
+            vs.beginTime === schedule.beginTime &&
+            vs.finishTime === schedule.finishTime
+        );
+
+        if (!hasOverlap) {
+          validSchedules.push({
+            classRoomCode: schedule.classRoomCode || null,
+            dayOfWeek: schedule.dayOfWeek,
+            beginTime: schedule.beginTime,
+            finishTime: schedule.finishTime,
+            validFrom: classroom.startDate
+              ? new Date(classroom.startDate)
+              : null,
+            validTo: classroom.finishDate
+              ? new Date(classroom.finishDate)
+              : null,
+            type: "schedule",
+          });
+        }
+      }
+    });
+  }
+
+  return validSchedules;
+};
