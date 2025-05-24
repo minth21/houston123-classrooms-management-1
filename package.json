@@ -4,10 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:https": "local-ssl-proxy --source 3001 --target 3000 --cert node_modules/local-ssl-proxy/cert/localhost.crt --key node_modules/local-ssl-proxy/cert/localhost.key & next dev",
     "build": "next build",
     "start": "next start",
-    "start:https": "local-ssl-proxy --source 3001 --target 3000 --cert node_modules/local-ssl-proxy/cert/localhost.crt --key node_modules/local-ssl-proxy/cert/localhost.key & next start",
     "lint": "next lint"
   },
   "dependencies": {
