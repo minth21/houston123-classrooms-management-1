@@ -13,6 +13,12 @@ export interface RecordingSettings {
   };
 }
 
+export interface PostRecording {
+  classCode: string;
+  file: File;
+  timestamp: string;
+}
+
 export interface Classroom {
   _id: string;
   classID: string;
@@ -202,6 +208,28 @@ export const classroomService = {
 
     const response = await api.post(
       `/classroom/${classCode}/diary/post`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    return response.data;
+  },
+
+  async postRecording({
+    classCode,
+    file,
+    timestamp,
+  }: PostRecording): Promise<any> {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("timestamp", timestamp);
+
+    const response = await api.post(
+      `/classroom/${classCode}/recording`,
       formData,
       {
         headers: {

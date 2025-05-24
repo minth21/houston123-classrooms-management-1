@@ -45,11 +45,14 @@ import {
   ChevronLeft,
   Users,
   Video,
+  StopCircle,
+  AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
 import DashboardHeader from "@/components/dashboard-header";
 import Loader from "@/components/loader";
-import { RecordingSettingsDialog } from "@/components/recording-settings-dialog";
+
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface DiaryEntry {
   id: string;
@@ -57,6 +60,15 @@ interface DiaryEntry {
   content: string;
   author: string;
   attachments: any[];
+}
+
+interface Recording {
+  id: string;
+  stream: MediaStream;
+  recorder: MediaRecorder;
+  isRecording: boolean;
+  blob?: Blob;
+  classCode?: string;
 }
 
 export default function ClassroomDetailPage() {
@@ -72,6 +84,8 @@ export default function ClassroomDetailPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [commentText, setCommentText] = useState("");
   const [selectedAttendance, setSelectedAttendance] = useState<string>("");
+  const [recording, setRecording] = useState<Recording | null>(null);
+  const [recordingError, setRecordingError] = useState<string | null>(null);
   const [recordingSettings, setRecordingSettings] = useState<RecordingSettings>();
 
   const handleSaveRecordingSettings = async (settings: RecordingSettings) => {
@@ -85,6 +99,110 @@ export default function ClassroomDetailPage() {
       toast.error("Có lỗi xảy ra khi lưu cấu hình ghi hình");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const uploadRecording = async () => {
+    if (!recording || !recording.blob || !recording.classCode || !selectedAttendance) {
+      toast.error("Vui lòng chọn buổi học trước khi lưu video");
+      return;
+    }
+
+    try {
+      const file = new File([recording.blob], `recording-${Date.now()}.webm`, {
+        type: "video/webm",
+      });
+
+      await classroomService.postComment({
+        attendanceId: selectedAttendance,
+        content: "Video ghi hình buổi học",
+        files: [file],
+      });
+
+      // Clear recording after successful upload
+      setRecording(null);
+      toast.success("Video đã được tải lên thành công");
+
+      // Refresh attendance data to show the new comment with video
+      await fetchAttendanceData();
+    } catch (error) {
+      console.error("Error uploading recording:", error);
+      setRecordingError("Không thể tải video lên máy chủ. Vui lòng thử lại.");
+    }
+  };
+
+  // Auto-select current attendance when starting recording
+  const startRecording = async () => {
+    // Find the most recent attendance for today
+    const today = new Date().toISOString().split('T')[0];
+    const todayAttendance = attendance.find(record => 
+      record.date.startsWith(today)
+    );
+
+    if (!todayAttendance) {
+      toast.error("Không tìm thấy buổi học cho ngày hôm nay");
+      return;
+    }
+
+    // Set the selected attendance
+    setSelectedAttendance(todayAttendance._id);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+
+      const options = {
+        mimeType: "video/webm",
+        videoBitsPerSecond: 2500000,
+        audioBitsPerSecond: 128000,
+      };
+
+      const recorder = new MediaRecorder(stream, options);
+      const chunks: BlobPart[] = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: "video/webm" });
+        setRecording((prev) => (prev ? { ...prev, blob } : null));
+
+        // Stop all tracks after recording is stopped
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      // Start recording
+      recorder.start(1000);
+
+      setRecording({
+        id: Date.now().toString(),
+        stream,
+        recorder,
+        isRecording: true,
+        classCode: classId,
+      });
+    } catch (error) {
+      console.error("Error starting recording:", error);
+      setRecordingError("Không thể bắt đầu ghi hình. Vui lòng thử lại.");
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!recording) return;
+
+    try {
+      if (recording.recorder.state === "recording") {
+        recording.recorder.stop();
+      }
+      setRecording((prev) => (prev ? { ...prev, isRecording: false } : null));
+    } catch (error) {
+      console.error("Error stopping recording:", error);
+      setRecordingError("Không thể dừng ghi hình. Vui lòng thử lại.");
     }
   };
 
@@ -207,16 +325,85 @@ export default function ClassroomDetailPage() {
   const currentClassData = attendance[0];
 
   return (
-    <div className="space-y-6">
-      <div className="mb-4">
-        <Link
-          href="/dashboard/classrooms"
-          className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
-        >
-          <ChevronLeft className="h-4 w-4 mr-1" />
-          Back to Classrooms
-        </Link>
+    <div className="space-y-6 container">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Link
+            href="/dashboard/classrooms"
+            className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Quay lại
+          </Link>
+          <h1 className="text-2xl font-semibold">Chi tiết lớp học</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          {recording ? (
+            <div className="space-y-4">
+              {recording.isRecording ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                    <span className="text-red-500 font-medium">Đang ghi...</span>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    onClick={stopRecording}
+                    className="gap-2"
+                  >
+                    <StopCircle className="h-4 w-4" />
+                    Dừng ghi hình
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  {recording.blob && (
+                    <Button onClick={uploadRecording} className="gap-2">
+                      <FileText className="h-4 w-4" />
+                      Lưu video
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <Button
+              onClick={startRecording}
+              className="gap-2"
+              disabled={!!recordingError}
+            >
+              <Video className="h-4 w-4" />
+              Bắt đầu ghi hình
+            </Button>
+          )}
+        </div>
       </div>
+
+      {recordingError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{recordingError}</AlertDescription>
+        </Alert>
+      )}
+
+      {recording && !recording.isRecording && recording.blob && (
+        <Card className="mt-4">
+          <CardContent className="pt-6">
+            <video
+              src={URL.createObjectURL(recording.blob)}
+              controls
+              className="w-full rounded-lg shadow-lg"
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {error ? (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
 
       <DashboardHeader
         title={currentClassData.classId}
@@ -283,11 +470,9 @@ export default function ClassroomDetailPage() {
               </div>
               <div className="flex items-center gap-3">
                 <div>
-                  <p className="text-sm font-medium">Ghi hình</p>
-                  <RecordingSettingsDialog
-                    settings={recordingSettings}
-                    onSave={handleSaveRecordingSettings}
-                  />
+                  <p className="text-sm font-medium">Ghi hình</p>                  <p className="text-sm text-gray-600">
+                    {recording?.isRecording ? "Đang ghi" : recording?.blob ? "Đã ghi xong" : "Chưa ghi hình"}
+                  </p>
                 </div>
               </div>
             </div>
