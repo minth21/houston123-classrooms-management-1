@@ -59,11 +59,11 @@ export default function SchedulePage() {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await classroomService.getClassrooms();
-
-      // Filter out classrooms with no schedule data to avoid empty entries
+      const data = await classroomService.getClassrooms();      // Filter out classrooms with no schedule data to avoid empty entries
       const filteredData = data.filter(
-        (classroom) => classroom.schedule && classroom.schedule.length > 0
+        (classroom) => 
+          (classroom.schedule && classroom.schedule.length > 0) ||
+          (classroom.schoolShift && classroom.schoolShift.length > 0)
       );
 
       setClassrooms(filteredData);
@@ -143,13 +143,13 @@ export default function SchedulePage() {
       );
     }
 
-    return (
-      <ClassScheduleCalendar
+    return (      <ClassScheduleCalendar
         classrooms={filteredClassrooms}
         initialView={calendarView}
         initialDate={calendarDate}
         onViewChange={handleViewChange}
         onDateChange={handleDateChange}
+        showAllClasses={true}
       />
     );
   };

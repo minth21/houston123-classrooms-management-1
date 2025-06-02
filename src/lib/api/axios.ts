@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create an Axios instance with default configs
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: typeof window !== 'undefined' ? window.location.origin : "http://localhost:3000",
   headers: {
     "Content-Type": "application/json",
     "Accept": "application/json",
@@ -17,8 +17,8 @@ api.interceptors.request.use(
       config.headers.Authorization = token.startsWith("Bearer ")
         ? token
         : `Bearer ${token}`;
-    }    
-    
+    }
+
     const selectedCompany = localStorage.getItem("selectedCompany");
     if (selectedCompany) {
       config.headers["x-company"] = selectedCompany;
@@ -31,20 +31,35 @@ api.interceptors.request.use(
   }
 );
 
+// Helper function to safely log error details
+const getSafeErrorDetails = (error: any) => {
+  const sensitiveHeaders = ['authorization', 'x-auth-token', 'x-api-key'];
+
+  // Create a safe copy of headers with sensitive data redacted
+  const safeHeaders = error.config?.headers ? { ...error.config.headers } : {};
+  Object.keys(safeHeaders).forEach(key => {
+    if (sensitiveHeaders.includes(key.toLowerCase())) {
+      safeHeaders[key] = '[REDACTED]';
+    }
+  });
+
+  return {
+    status: error.response?.status,
+    data: error.response?.data,
+    config: {
+      url: error.config?.url,
+      method: error.config?.method,
+      params: error.config?.params,
+      headers: safeHeaders
+    }
+  };
+};
+
 // Add a response interceptor to handle errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API Error:', {
-      status: error.response?.status,
-      data: error.response?.data,
-      config: {
-        url: error.config?.url,
-        method: error.config?.method,
-        params: error.config?.params,
-        headers: error.config?.headers
-      }
-    });
+    console.error('API Error:', getSafeErrorDetails(error));
     return Promise.reject(error);
   }
 );

@@ -10,78 +10,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/context/auth-context";
+import { useStaff } from "@/context/staff-context";
 import { LogOut, Building2, Phone, Mail } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
-import { api } from "@/lib/api";
-
-interface StaffInfo {
-  _id: string;
-  userId: string;
-  name: string;
-  displayName: string;
-  phoneNumber: string;
-  birthday: string;
-  email: string;
-  personalId: string;
-  positionName: string;
-  address: string;
-  branch: string[];
-  imageUrl: string | null;
-  position: string;
-  shortPermissionName: string;
-}
 
 export default function UserMenu() {
   const { logout } = useAuth();
-  const [staff, setStaff] = useState<StaffInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-  const isFirstRender = useRef(true);
-
-  const fetchStaffInfo = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    try {
-      setLoading(true);
-      const response = await api.get("/user/staff/me");
-      const [data] = response.data;
-      setStaff(data);
-    } catch (error) {
-      console.error("Failed to fetch staff info:", error);
-      setStaff(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Load data on mount and token change
-  useEffect(() => {
-    fetchStaffInfo();
-
-    // Add event listener for storage changes
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === "token") {
-        fetchStaffInfo();
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
-
-  // Refetch when component becomes visible
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible" && !isFirstRender.current) {
-        fetchStaffInfo();
-      }
-      isFirstRender.current = false;
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () =>
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, []);
+  const { staff, loading } = useStaff();
 
   const getInitials = (name: string) => {
     return name

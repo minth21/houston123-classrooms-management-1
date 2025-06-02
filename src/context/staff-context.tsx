@@ -54,10 +54,9 @@ export function StaffProvider({ children }: { children: ReactNode }) {
   const fetchStaffInfo = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
-
     try {
       setLoading(true);
-      const response = await api.get("/user/staff/me");
+      const response = await api.get("/api/user/staff/me");
       const [data] = response.data;
       setStaff(data);
     } catch (error) {

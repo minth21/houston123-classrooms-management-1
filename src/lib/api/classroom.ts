@@ -31,7 +31,15 @@ export interface Classroom {
   supporter: string[];
   publicMember: string[];
   partnerSchoolId: string | null;
-  schoolShift: any[];
+  schoolShift: Array<{
+    _id: string;
+    roomId: string;
+    day: number;
+    startTime: string;
+    endTime: string;
+    date: string;
+    expiryDate: string;
+  }>;
   member: any[];
   __v: number;
   moodleCourseId: number | null;
@@ -43,12 +51,11 @@ export interface Classroom {
   program?: {
     [key: string]: string;
   };
-  status: number;
+  status?: number;
   conversationMonthlyUpdated: any[];
   diaryMonthlyUpdated: any[];
   ID: number;
-  subjectName: string;
-  teacherName: string;
+  subjectName: string;  teacherName: string;
   role: string;
   beginDate: string;
   reason: string | null;
@@ -62,6 +69,20 @@ export interface Classroom {
   }>;
   isActive: boolean;
   salary?: {
+    _id: string;
+    classId: string;
+    type: number;
+    supportType: number;
+    reward: any[];
+    supportMonth: number;
+    supportDay: number;
+    supportHour: number;
+    supportShift: number;
+    hour: number;
+    shift: number;
+    day: number;
+    month: number;
+    startDate: string;
     __v: number;
   };
   recordingSettings?: RecordingSettings; // Add recording settings
@@ -121,7 +142,7 @@ export const classroomService = {
     }
 
     try {
-      const response = await api.get("/classroom", {
+      const response = await api.get("/api/classroom", {
         params: {
           field: JSON.stringify({ partnerSchoolName: true, salary: true }),
           branch: branchCode,
@@ -157,7 +178,7 @@ export const classroomService = {
     }
 
     try {
-      const response = await api.get(`/classroom/${classCode}/attendance`);
+      const response = await api.get(`/api/classroom/${classCode}/attendance`);
       return response.data.data || [];
     } catch (error: any) {
       console.error("Error fetching classroom attendance:", {
@@ -184,7 +205,7 @@ export const classroomService = {
     }
 
     const response = await api.post(
-      `/classroom/attendance/${attendanceId}/comment`,
+      `/api/classroom/attendance/${attendanceId}/comment`,
       formData,
       {
         headers: {
@@ -207,7 +228,7 @@ export const classroomService = {
     }
 
     const response = await api.post(
-      `/classroom/${classCode}/diary/post`,
+      `/api/classroom/${classCode}/diary/post`,
       formData,
       {
         headers: {
@@ -229,7 +250,7 @@ export const classroomService = {
     formData.append("timestamp", timestamp);
 
     const response = await api.post(
-      `/classroom/${classCode}/recording`,
+      `/api/classroom/${classCode}/recording`,
       formData,
       {
         headers: {

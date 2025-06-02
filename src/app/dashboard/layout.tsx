@@ -227,11 +227,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           path: "/dashboard/classrooms",
           icon: <List className="h-4 w-4" />,
         },
-        {
-          name: "Ghi hình",
-          path: "/dashboard/recordings",
-          icon: <Video className="h-4 w-4" />,
-        },
       ],
       badge: "New",
     },
