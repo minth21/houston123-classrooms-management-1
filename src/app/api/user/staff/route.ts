@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     // Get the token from cookies
     const token = request.cookies.get("token")?.value;
-    
+
     if (!token) {
       return NextResponse.json(
         { error: "No authentication token found" },
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log("Fetching staff list from ERP API...");    // Get additional headers from the request
+    console.log("Fetching staff list from ERP API..."); // Get additional headers from the request
     const xCompany = request.headers.get("x-company");
     const xBranch = request.headers.get("x-branch");
 
@@ -24,10 +24,12 @@ export async function GET(request: NextRequest) {
     const queryString = searchParams.toString();
 
     // Forward the request to the ERP API with query parameters
-    const url = `${ERP_API_URL}/api/user/staff${queryString ? `?${queryString}` : ''}`;
+    const url = `${ERP_API_URL}/api/user/staff${
+      queryString ? `?${queryString}` : ""
+    }`;
     const response = await axios.get(url, {
       headers: {
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
         ...(xCompany && { "x-company": xCompany }),
         ...(xBranch && { "x-branch": xBranch }),
@@ -37,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     console.log("ERP API Response:", {
       status: response.status,
-      hasData: !!response.data
+      hasData: !!response.data,
     });
 
     if (response.status === 200) {
@@ -52,13 +54,13 @@ export async function GET(request: NextRequest) {
     console.error("Staff list fetch error:", {
       message: error.message,
       response: error.response?.data,
-      status: error.response?.status
+      status: error.response?.status,
     });
-    
+
     return NextResponse.json(
-      { 
+      {
         error: "Failed to fetch staff list",
-        details: error.response?.data || error.message 
+        details: error.response?.data || error.message,
       },
       { status: error.response?.status || 500 }
     );

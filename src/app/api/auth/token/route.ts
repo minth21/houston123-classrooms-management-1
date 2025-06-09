@@ -7,31 +7,36 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     console.log("Forwarding auth request to ERP API...");
-    console.log("Request body:", body);    // Forward the request to the ERP API
-    const response = await axios.post(`${ERP_API_URL}/api/authorization/getToken`, body, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      validateStatus: (status) => status >= 200 && status < 500,
-    });
+    console.log("Request body:", body); // Forward the request to the ERP API
+    const response = await axios.post(
+      `${ERP_API_URL}/api/authorization/getToken`,
+      body,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        validateStatus: (status) => status >= 200 && status < 500,
+      }
+    );
 
     console.log("ERP API Response:", {
       status: response.status,
       headers: Object.keys(response.headers),
       hasData: !!response.data,
-      data: response.data // Add full data for debugging
+      data: response.data, // Add full data for debugging
     });
 
     // Get the token from the response
-    const token = response.headers["authorization"] || 
-                 response.headers["x-auth-token"] || 
-                 (response.data && (response.data.token || response.data.accessToken));
+    const token =
+      response.headers["authorization"] ||
+      response.headers["x-auth-token"] ||
+      (response.data && (response.data.token || response.data.accessToken));
 
     if (!token && response.status !== 204) {
       console.error("No token found in response:", {
         status: response.status,
         headers: response.headers,
-        data: response.data
+        data: response.data,
       });
       return NextResponse.json(
         { error: "No token received from authentication server" },
@@ -86,13 +91,13 @@ export async function POST(request: NextRequest) {
       message: error.message,
       response: error.response?.data,
       status: error.response?.status,
-      url: error.config?.url
+      url: error.config?.url,
     });
-    
+
     return NextResponse.json(
-      { 
+      {
         error: "Authentication failed",
-        details: error.response?.data || error.message 
+        details: error.response?.data || error.message,
       },
       { status: error.response?.status || 500 }
     );

@@ -3,14 +3,13 @@ import axios from "axios";
 
 const ERP_API_URL = "https://erp.houston123.edu.vn";
 
-// Handle dynamic route for /api/user/staff/[id]
-export async function GET(
+export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ attendanceId: string }> }
 ) {
   try {
     // Await params in Next.js 15+
-    const { id } = await params;
+    const { attendanceId } = await params;
 
     // Get the token from cookies
     const token = request.cookies.get("token")?.value;
@@ -20,38 +19,48 @@ export async function GET(
         { error: "No authentication token found" },
         { status: 401 }
       );
-    } // Get additional headers from the request
-    const xCompany = request.headers.get("x-company");
-    const xBranch = request.headers.get("x-branch");
+    }
+    console.log(`Posting comment for attendance ${attendanceId} to ERP API...`);
 
-    console.log(`Fetching staff member ${id} from ERP API...`);
+    // Get the form data from the request
+    const formData = await request.formData();
+
+    console.log("Form data received:", {
+      attendanceId,
+      hasComment: formData.has("comment"),
+      fileCount: Array.from(formData.keys()).filter((key) =>
+        key.startsWith("file")
+      ).length,
+    });
 
     // Forward the request to the ERP API
-    const response = await axios.get(`${ERP_API_URL}/api/user/staff/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        ...(xCompany && { "x-company": xCompany }),
-        ...(xBranch && { "x-branch": xBranch }),
-      },
-      validateStatus: (status) => status >= 200 && status < 500,
-    });
+    const response = await axios.post(
+      `${ERP_API_URL}/api/classroom/attendance/${attendanceId}/comment`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+        validateStatus: (status) => status >= 200 && status < 500,
+      }
+    );
 
     console.log("ERP API Response:", {
       status: response.status,
       hasData: !!response.data,
     });
 
-    if (response.status === 200) {
-      return NextResponse.json(response.data, { status: 200 });
+    if (response.status === 200 || response.status === 201) {
+      return NextResponse.json(response.data, { status: response.status });
     } else {
       return NextResponse.json(
-        { error: "Failed to fetch staff member", details: response.data },
+        { error: "Failed to post attendance comment", details: response.data },
         { status: response.status }
       );
     }
   } catch (error: any) {
-    console.error("Staff member fetch error:", {
+    console.error("Attendance comment post error:", {
       message: error.message,
       response: error.response?.data,
       status: error.response?.status,
@@ -59,7 +68,7 @@ export async function GET(
 
     return NextResponse.json(
       {
-        error: "Failed to fetch staff member",
+        error: "Failed to post attendance comment",
         details: error.response?.data || error.message,
       },
       { status: error.response?.status || 500 }
@@ -73,7 +82,7 @@ export async function OPTIONS() {
     status: 204,
     headers: {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
       "Access-Control-Max-Age": "86400",
     },

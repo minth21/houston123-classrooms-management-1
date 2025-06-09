@@ -20,14 +20,10 @@ import {
   Home,
   BookOpen,
   List,
-  Users,
-  Calendar,
-  Settings,
   Bell,
   ChevronRight,
   Building2,
   MapPin,
-  Video, // Thêm biểu tượng Video
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -154,7 +150,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       router.refresh();
 
       // If we need a stronger reset, use window.location.reload()
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         window.location.reload();
       }
     }

@@ -28,7 +28,6 @@ import {
   Mic,
   Settings,
   Download,
-  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Toaster } from "sonner";
@@ -46,27 +45,31 @@ interface RecordingSettings {
 interface RecordingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUpload: (file: File) => Promise<void>;
+  classCode: string;
   classroomName: string;
 }
 
 export function RecordingModal({
   isOpen,
   onClose,
-  onUpload,
+  classCode,
   classroomName,
 }: RecordingModalProps) {
-  const [currentTab, setCurrentTab] = useState("settings");  const [isRecording, setIsRecording] = useState(false);
+  const [currentTab, setCurrentTab] = useState("settings");
+  const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const [hasPermission, setHasPermission] = useState(false);
-
+  const [audioLevel, setAudioLevel] = useState(0);
+  const [estimatedFileSize, setEstimatedFileSize] = useState(0); // MB
+  const [showVideoPreview, setShowVideoPreview] = useState(false);
+  const [videoObjectUrl, setVideoObjectUrl] = useState<string | null>(null);
   const [settings, setSettings] = useState<RecordingSettings>({
     source: "camera",
-    resolution: "1280x720",
-    frameRate: 30,
-    videoBitrate: 2500,
-    audioBitrate: 128,
+    resolution: "854x480", // Giảm từ 1280x720 để tiết kiệm RAM
+    frameRate: 25, // Giảm từ 30fps
+    videoBitrate: 1500, // Giảm từ 2500 để tiết kiệm băng thông
+    audioBitrate: 96, // Giảm từ 128
   });
 
   const [devices, setDevices] = useState<{
@@ -76,11 +79,13 @@ export function RecordingModal({
     videoDevices: [],
     audioDevices: [],
   });
-
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const videoPreviewRef = useRef<HTMLVideoElement | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
   // Load available devices
   useEffect(() => {
     const loadDevices = async () => {
@@ -109,28 +114,98 @@ export function RecordingModal({
     } else {
       setHasPermission(false);
     }
-  }, [isOpen]);
-  // Start preview when settings change
+  }, [isOpen]); // Start preview when settings change
   useEffect(() => {
-    if (isOpen && currentTab === "preview") {
+    if (isOpen && (currentTab === "preview" || currentTab === "recording")) {
       startPreview();
     }
     return () => {
-      stopPreview();
+      // Only stop preview if modal is closing or going back to settings
+      if (!isOpen || currentTab === "settings") {
+        stopPreview();
+      }
     };
-  }, [isOpen, currentTab, settings]);
-
-  // Cleanup when modal closes
+  }, [isOpen, currentTab, settings]); // Cleanup when modal closes
   useEffect(() => {
     if (!isOpen) {
       stopPreview();
+      stopAudioAnalyzer();
       setCurrentTab("settings");
       setRecordedBlob(null);
       setRecordingTime(0);
+      setShowVideoPreview(false);
+      // Cleanup video object URL
+      if (videoObjectUrl) {
+        URL.revokeObjectURL(videoObjectUrl);
+        setVideoObjectUrl(null);
+      }
     }
   }, [isOpen]);
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      stopPreview();
+      stopAudioAnalyzer();
+      // Cleanup video object URL
+      if (videoObjectUrl) {
+        URL.revokeObjectURL(videoObjectUrl);
+      }
+    };
+  }, [videoObjectUrl]);
+
+  // Force preview start when entering recording tab
+  useEffect(() => {
+    if (
+      isOpen &&
+      currentTab === "recording" &&
+      hasPermission &&
+      !streamRef.current
+    ) {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        startPreview().catch((error) => {
+          console.error(
+            "Failed to auto-start preview in recording tab:",
+            error
+          );
+        });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, currentTab, hasPermission]);
+  // Quản lý object URL để tránh memory leak
+  useEffect(() => {
+    if (recordedBlob) {
+      // Cleanup URL cũ trước khi tạo mới
+      if (videoObjectUrl) {
+        URL.revokeObjectURL(videoObjectUrl);
+      }
+
+      // Tạo URL mới
+      const newUrl = URL.createObjectURL(recordedBlob);
+      setVideoObjectUrl(newUrl);
+
+      // Cleanup khi component unmount hoặc blob thay đổi
+      return () => {
+        URL.revokeObjectURL(newUrl);
+      };
+    } else {
+      // Cleanup khi không còn blob
+      if (videoObjectUrl) {
+        URL.revokeObjectURL(videoObjectUrl);
+        setVideoObjectUrl(null);
+      }
+    }
+  }, [recordedBlob]);
+
   const startPreview = async () => {
     try {
+      // Clear any existing stream first
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+
       let stream: MediaStream;
 
       if (settings.source === "screen") {
@@ -159,21 +234,108 @@ export function RecordingModal({
           },
         });
       }
-
       streamRef.current = stream;
       if (videoPreviewRef.current) {
         videoPreviewRef.current.srcObject = stream;
+        // Force play to ensure video starts
+        try {
+          await videoPreviewRef.current.play();
+        } catch (playError) {
+          console.warn("Auto-play was prevented, but video should still work");
+        }
       }
+
+      // Setup audio analyzer if stream has audio tracks
+      if (stream.getAudioTracks().length > 0) {
+        setupAudioAnalyzer(stream);
+      }
+
+      console.log("Preview started successfully", {
+        hasStream: !!stream,
+        videoTracks: stream.getVideoTracks().length,
+        audioTracks: stream.getAudioTracks().length,
+      });
     } catch (error) {
       console.error("Error starting preview:", error);
       const errorMessage =
         error instanceof Error ? error.message : "Lỗi không xác định";
       toast.error(`Không thể khởi động preview: ${errorMessage}`);
+
+      // Reset stream reference on error
+      streamRef.current = null;
+      if (videoPreviewRef.current) {
+        videoPreviewRef.current.srcObject = null;
+      }
       throw error; // Re-throw để startRecording có thể handle
     }
   };
 
+  // Setup audio analyzer for real-time audio level monitoring
+  const setupAudioAnalyzer = (stream: MediaStream) => {
+    try {
+      // Cleanup existing audio context
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+
+      const audioTracks = stream.getAudioTracks();
+      if (audioTracks.length === 0) return;
+
+      const audioContext = new (window.AudioContext ||
+        (window as any).webkitAudioContext)();
+      const analyser = audioContext.createAnalyser();
+      const microphone = audioContext.createMediaStreamSource(stream);
+
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.8;
+      microphone.connect(analyser);
+
+      audioContextRef.current = audioContext;
+      analyserRef.current = analyser;
+
+      // Start monitoring audio levels
+      const updateAudioLevel = () => {
+        if (!analyserRef.current) return;
+
+        const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+        analyserRef.current.getByteFrequencyData(dataArray);
+
+        // Calculate average volume
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          sum += dataArray[i];
+        }
+        const average = sum / dataArray.length;
+        const normalizedLevel = Math.min(100, (average / 255) * 100);
+
+        setAudioLevel(normalizedLevel);
+        animationFrameRef.current = requestAnimationFrame(updateAudioLevel);
+      };
+
+      updateAudioLevel();
+    } catch (error) {
+      console.error("Error setting up audio analyzer:", error);
+      setAudioLevel(0);
+    }
+  };
+
+  const stopAudioAnalyzer = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    analyserRef.current = null;
+    setAudioLevel(0);
+  };
   const stopPreview = () => {
+    stopAudioAnalyzer();
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
@@ -188,11 +350,29 @@ export function RecordingModal({
       if (!streamRef.current) {
         toast.info("Đang khởi động camera/microphone...");
         await startPreview();
+
+        // Double check after starting preview
+        if (!streamRef.current) {
+          throw new Error(
+            "Không thể khởi động stream sau khi khởi động preview"
+          );
+        }
       }
 
-      if (!streamRef.current) {
-        throw new Error("Không thể khởi động stream");
+      // Verify stream has active tracks
+      const videoTracks = streamRef.current.getVideoTracks();
+      const audioTracks = streamRef.current.getAudioTracks();
+
+      if (videoTracks.length === 0) {
+        throw new Error("Không có video track sẵn dùng");
       }
+
+      console.log("Starting recording with stream:", {
+        videoTracks: videoTracks.length,
+        audioTracks: audioTracks.length,
+        videoTrackState: videoTracks[0]?.readyState,
+        audioTrackState: audioTracks[0]?.readyState,
+      });
 
       // Kiểm tra xem browser có hỗ trợ MediaRecorder không
       if (!MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")) {
@@ -218,22 +398,50 @@ export function RecordingModal({
         if (event.data.size > 0) {
           chunks.push(event.data);
         }
-      };      mediaRecorder.onstop = async () => {
+      };
+      mediaRecorder.onstop = async () => {
         const blob = new Blob(chunks, { type: mimeType });
         setRecordedBlob(blob);
 
+        // Kiểm tra kích thước file
+        const fileSizeMB = blob.size / (1024 * 1024);
+        console.log(`Video size: ${fileSizeMB.toFixed(2)} MB`);
+
         // Tự động upload sau khi dừng ghi hình
         try {
-          const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+          // Cảnh báo nếu file quá lớn
+          if (fileSizeMB > 30) {
+            toast.warning(
+              `File khá lớn (${fileSizeMB.toFixed(
+                1
+              )} MB), upload có thể mất nhiều thời gian...`
+            );
+          }          const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
           const fileName = `recording-${classroomName}-${timestamp}.webm`;
           const file = new File([blob], fileName, { type: "video/webm" });
 
-          await onUpload(file);
+          await uploadToDiary(file, `Video bài học được ghi lại - ${classroomName} - ${new Date().toLocaleString('vi-VN')}`);
           toast.success("Ghi hình và upload thành công!");
           onClose(); // Đóng modal sau khi upload thành công
-        } catch (error) {   
+        } catch (error) {
           console.error("Upload error:", error);
-          toast.error("Ghi hình thành công nhưng upload thất bại");
+          const errorMessage =
+            error instanceof Error ? error.message : "Lỗi không xác định";
+
+          // Kiểm tra nếu lỗi do file quá lớn
+          if (
+            errorMessage.includes("Body exceeded") ||
+            errorMessage.includes("413") ||
+            fileSizeMB > 40
+          ) {
+            toast.error(
+              `File quá lớn (${fileSizeMB.toFixed(
+                1
+              )} MB). Hãy ghi video ngắn hơn hoặc giảm chất lượng.`
+            );
+          } else {
+            toast.error("Ghi hình thành công nhưng upload thất bại");
+          }
           setCurrentTab("result"); // Chuyển đến tab result để có thể thử lại
         }
       };
@@ -247,11 +455,16 @@ export function RecordingModal({
       mediaRecorderRef.current = mediaRecorder;
       mediaRecorder.start(1000); // Record in 1-second intervals
       setIsRecording(true);
-      setRecordingTime(0);
-
-      // Start timer
+      setRecordingTime(0); // Start timer
       intervalRef.current = setInterval(() => {
-        setRecordingTime((prev) => prev + 1);
+        setRecordingTime((prev) => {
+          const newTime = prev + 1;
+          // Ước tính kích thước file dựa trên bitrate và thời gian
+          const totalBitrate = settings.videoBitrate + settings.audioBitrate; // kbps
+          const estimatedSizeMB = (totalBitrate * newTime) / (8 * 1024); // Convert to MB
+          setEstimatedFileSize(estimatedSizeMB);
+          return newTime;
+        });
       }, 1000);
       toast.success("Đã bắt đầu ghi hình");
     } catch (error) {
@@ -261,7 +474,6 @@ export function RecordingModal({
       toast.error(`Không thể bắt đầu ghi hình: ${errorMessage}`);
     }
   };
-
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
@@ -270,7 +482,20 @@ export function RecordingModal({
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
-      }
+      } // Reset estimated file size
+      setEstimatedFileSize(0);
+
+      // Dọn dẹp stream để tiết kiệm RAM
+      setTimeout(() => {
+        if (streamRef.current && !isRecording) {
+          console.log("Cleaning up stream to save RAM");
+          streamRef.current.getTracks().forEach((track) => track.stop());
+          streamRef.current = null;
+          if (videoPreviewRef.current) {
+            videoPreviewRef.current.srcObject = null;
+          }
+        }
+      }, 2000); // Đợi 2 giây để MediaRecorder hoàn thành việc xử lý
 
       toast.success("Đã dừng ghi hình");
     }
@@ -295,20 +520,82 @@ export function RecordingModal({
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
-
   const resolutionOptions = [
-    { value: "1920x1080", label: "Full HD (1920x1080)" },
-    { value: "1280x720", label: "HD (1280x720)" },
-    { value: "854x480", label: "SD (854x480)" },
-    { value: "640x360", label: "Low (640x360)" },
+    { value: "1920x1080", label: "Full HD (1920x1080) - Chất lượng cao" },
+    { value: "1280x720", label: "HD (1280x720) - Cân bằng" },
+    { value: "854x480", label: "SD (854x480) - Tiết kiệm RAM ⭐" },
+    { value: "640x360", label: "Low (640x360) - Tiết kiệm tối đa" },
   ];
 
   const frameRateOptions = [
-    { value: 60, label: "60 FPS" },
-    { value: 30, label: "30 FPS" },
-    { value: 24, label: "24 FPS" },
-    { value: 15, label: "15 FPS" },
-  ];
+    { value: 60, label: "60 FPS - Siêu mượt" },
+    { value: 30, label: "30 FPS - Chuẩn" },
+    { value: 25, label: "25 FPS - Tiết kiệm ⭐" },
+    { value: 24, label: "24 FPS - Điện ảnh" },
+    { value: 15, label: "15 FPS - Tiết kiệm tối đa" },  ];
+
+  // Upload video to diary API
+  const uploadToDiary = async (file: File, content: string = "Video bài học được ghi lại") => {
+    try {      const formData = new FormData();
+      formData.append('content', content);
+      formData.append('file1', file); // Use numbered file naming pattern like the API expects      // Get company and branch from localStorage for headers
+      const selectedCompany = localStorage.getItem("selectedCompany");
+      const selectedBranch = localStorage.getItem("selectedBranch");
+      const cachedBranches = JSON.parse(localStorage.getItem("cached_branches") || "[]");
+      
+      const headers: Record<string, string> = {};
+      if (selectedCompany) {
+        headers["x-company"] = selectedCompany;
+      }
+      if (selectedBranch) {
+        // Find the branch ID from cached branches using the branch code
+        const branchId = cachedBranches?.find(
+          (b: { code: string; id: string }) => b.code === selectedBranch
+        )?.id;
+        if (branchId) {
+          headers["x-branch"] = branchId;
+        }
+      }
+
+      const response = await fetch(`/api/classroom/${classCode}/diary/post`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include', // Include cookies for authentication
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Upload failed: ${response.status} ${response.statusText} - ${errorData}`);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Diary upload error:', error);
+      throw error;
+    }
+  };
+
+  // Retry upload function
+  const retryUpload = async () => {
+    if (!recordedBlob) return;
+    
+    try {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const fileName = `recording-${classroomName}-${timestamp}.webm`;
+      const file = new File([recordedBlob], fileName, { type: "video/webm" });
+
+      toast.info("Đang thử upload lại...");
+      await uploadToDiary(file, `Video bài học được ghi lại - ${classroomName} - ${new Date().toLocaleString('vi-VN')}`);
+      toast.success("Upload thành công!");
+      onClose();
+    } catch (error) {
+      console.error("Retry upload error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Lỗi không xác định";
+      toast.error(`Upload thất bại: ${errorMessage}`);
+    }
+  };
 
   return (
     <>
@@ -612,19 +899,22 @@ export function RecordingModal({
                             >
                               <SelectTrigger className="h-11">
                                 <SelectValue />
-                              </SelectTrigger>
+                              </SelectTrigger>{" "}
                               <SelectContent>
-                                <SelectItem value="1000">
-                                  1000 kbps (Low)
+                                <SelectItem value="800">
+                                  800 kbps - Tiết kiệm tối đa
+                                </SelectItem>
+                                <SelectItem value="1500">
+                                  1500 kbps - Tiết kiệm ⭐
                                 </SelectItem>
                                 <SelectItem value="2500">
-                                  2500 kbps (Medium)
+                                  2500 kbps - Cân bằng
                                 </SelectItem>
                                 <SelectItem value="5000">
-                                  5000 kbps (High)
+                                  5000 kbps - Chất lượng cao
                                 </SelectItem>
                                 <SelectItem value="8000">
-                                  8000 kbps (Very High)
+                                  8000 kbps - Chất lượng tối đa
                                 </SelectItem>
                               </SelectContent>
                             </Select>
@@ -645,16 +935,56 @@ export function RecordingModal({
                             >
                               <SelectTrigger className="h-11">
                                 <SelectValue />
-                              </SelectTrigger>
+                              </SelectTrigger>{" "}
                               <SelectContent>
-                                <SelectItem value="64">64 kbps</SelectItem>
-                                <SelectItem value="128">128 kbps</SelectItem>
-                                <SelectItem value="192">192 kbps</SelectItem>
-                                <SelectItem value="320">320 kbps</SelectItem>
+                                <SelectItem value="64">
+                                  64 kbps - Tiết kiệm
+                                </SelectItem>
+                                <SelectItem value="96">
+                                  96 kbps - Tiết kiệm ⭐
+                                </SelectItem>
+                                <SelectItem value="128">
+                                  128 kbps - Cân bằng
+                                </SelectItem>
+                                <SelectItem value="192">
+                                  192 kbps - Chất lượng cao
+                                </SelectItem>
+                                <SelectItem value="320">
+                                  320 kbps - Chất lượng tối đa
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                         </CardContent>
+
+                        {/* RAM optimization tips */}
+                        <div className="px-6 pb-6">
+                          <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                            <div className="flex items-start gap-3">
+                              <div className="text-blue-600 dark:text-blue-400 mt-0.5">
+                                💡
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
+                                  Tối ưu hóa RAM
+                                </h4>
+                                <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                                  <li>
+                                    • Dùng độ phân giải 854x480 hoặc thấp hơn
+                                  </li>
+                                  <li>• Chọn 25 FPS thay vì 30 FPS</li>
+                                  <li>
+                                    • Bitrate 1500 kbps thường đủ cho học online
+                                  </li>
+                                  <li>
+                                    • Tắt preview video sau khi ghi để tiết kiệm
+                                    RAM
+                                  </li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </Card>
                     </div>
 
@@ -719,7 +1049,7 @@ export function RecordingModal({
                                   {streamRef.current.getVideoTracks()[0]
                                     ?.label || "Video track"}
                                 </Badge>
-                              )}
+                              )}{" "}
                             </div>
 
                             {/* No preview message */}
@@ -736,21 +1066,38 @@ export function RecordingModal({
                                 </div>
                               </div>
                             )}
-                          </div>
-
+                          </div>{" "}
                           {/* Audio level indicator */}
                           {streamRef.current && (
                             <div className="mt-4 p-4 bg-muted rounded-lg">
                               <div className="flex items-center gap-3 text-sm">
                                 <Mic className="h-5 w-5 text-primary" />
                                 <span className="font-medium">Âm thanh:</span>
-                                <div className="flex-1 h-3 bg-background rounded-full overflow-hidden">
-                                  <div className="h-full bg-green-500 w-1/3 animate-pulse"></div>
+                                <div className="flex-1 h-3 bg-background rounded-full overflow-hidden relative">
+                                  <div
+                                    className="h-full transition-all duration-100 ease-out rounded-full"
+                                    style={{
+                                      width: `${Math.max(2, audioLevel)}%`,
+                                      backgroundColor:
+                                        audioLevel > 70
+                                          ? "#ef4444"
+                                          : audioLevel > 30
+                                          ? "#22c55e"
+                                          : "#6b7280",
+                                    }}
+                                  ></div>
                                 </div>
-                                <span className="text-sm text-muted-foreground font-medium">
-                                  OK
+                                <span className="text-sm text-muted-foreground font-medium min-w-[40px] text-right">
+                                  {audioLevel > 0
+                                    ? `${Math.round(audioLevel)}%`
+                                    : "Silent"}
                                 </span>
                               </div>
+                              {audioLevel > 80 && (
+                                <p className="text-xs text-orange-600 mt-2">
+                                  ⚠️ Âm thanh hơi to, có thể gây tiếng vọng
+                                </p>
+                              )}
                             </div>
                           )}
                         </div>
@@ -778,7 +1125,7 @@ export function RecordingModal({
                         </div>
                       </CardContent>
                     </Card>
-                  </TabsContent>
+                  </TabsContent>{" "}
                   <TabsContent value="recording" className="space-y-6">
                     <Card>
                       <CardHeader>
@@ -795,13 +1142,55 @@ export function RecordingModal({
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="aspect-video bg-black rounded-lg overflow-hidden mb-6">
-                          <video
-                            ref={videoPreviewRef}
-                            autoPlay
-                            muted
-                            className="w-full h-full object-contain"
-                          />
+                        <div className="relative">
+                          <div className="aspect-video bg-black rounded-lg overflow-hidden mb-6 border-2 border-border">
+                            <video
+                              ref={videoPreviewRef}
+                              autoPlay
+                              muted
+                              playsInline
+                              className="w-full h-full object-contain"
+                            />
+
+                            {/* Recording overlay */}
+                            {isRecording && (
+                              <div className="absolute top-3 left-3">
+                                <Badge
+                                  variant="destructive"
+                                  className="animate-pulse text-sm backdrop-blur-sm bg-red-600/90 text-white"
+                                >
+                                  ● REC {formatTime(recordingTime)}
+                                </Badge>
+                              </div>
+                            )}
+
+                            {/* No stream message */}
+                            {!streamRef.current && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="text-center text-white/70">
+                                  <Video className="h-16 w-16 mx-auto mb-3 opacity-50" />
+                                  <p className="text-base font-medium">
+                                    Đang khởi động camera...
+                                  </p>
+                                  <p className="text-sm mt-1">
+                                    Vui lòng chờ một chút
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Stream ready indicator */}
+                            {streamRef.current && !isRecording && (
+                              <div className="absolute top-3 left-3">
+                                <Badge
+                                  variant="default"
+                                  className="text-sm backdrop-blur-sm bg-green-600/90 text-white"
+                                >
+                                  ● READY
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         <div className="flex justify-center gap-4">
@@ -810,9 +1199,12 @@ export function RecordingModal({
                               onClick={startRecording}
                               size="lg"
                               className="bg-red-600 hover:bg-red-700 px-8 py-3 text-base"
+                              disabled={!streamRef.current}
                             >
                               <Video className="h-5 w-5 mr-2" />
-                              Bắt đầu ghi
+                              {streamRef.current
+                                ? "Bắt đầu ghi"
+                                : "Đang khởi động..."}
                             </Button>
                           ) : (
                             <Button
@@ -826,43 +1218,157 @@ export function RecordingModal({
                             </Button>
                           )}
                         </div>
+                        {/* Status info */}
+                        <div className="mt-4 p-3 bg-muted rounded-lg">
+                          <div className="flex flex-wrap items-center gap-3 text-sm">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  streamRef.current
+                                    ? "bg-green-500"
+                                    : "bg-yellow-500 animate-pulse"
+                                }`}
+                              ></div>
+                              <span className="font-medium">
+                                {streamRef.current
+                                  ? "Camera sẵn sàng"
+                                  : "Đang khởi động camera"}
+                              </span>
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {settings.resolution} | {settings.frameRate}fps
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {settings.source === "camera"
+                                ? "📹 Camera"
+                                : "🖥️ Màn hình"}
+                            </Badge>
+                            {isRecording && estimatedFileSize > 0 && (
+                              <Badge
+                                variant={
+                                  estimatedFileSize > 30
+                                    ? "destructive"
+                                    : estimatedFileSize > 10
+                                    ? "secondary"
+                                    : "default"
+                                }
+                                className="text-xs"
+                              >
+                                ~{estimatedFileSize.toFixed(1)} MB
+                              </Badge>
+                            )}
+                          </div>
+                          {isRecording && estimatedFileSize > 30 && (
+                            <p className="text-xs text-orange-600 mt-2">
+                              ⚠️ File đang trở nên khá lớn. Hãy cân nhắc dừng
+                              ghi hoặc giảm chất lượng.
+                            </p>
+                          )}
+                        </div>
                       </CardContent>
                     </Card>
-                  </TabsContent>                  <TabsContent value="result" className="space-y-6">
+                  </TabsContent>{" "}
+                  <TabsContent value="result" className="space-y-6">
                     <Card>
                       <CardHeader>
                         <CardTitle className="text-lg">Video đã ghi</CardTitle>
                         <DialogDescription>
-                          Video đã được tự động upload lên hệ thống sau khi ghi hình hoàn tất
+                          Video đã được tự động upload lên hệ thống sau khi ghi
+                          hình hoàn tất
                         </DialogDescription>
-                      </CardHeader>
+                      </CardHeader>{" "}
                       <CardContent className="space-y-6">
                         {recordedBlob && (
-                          <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                            <video
-                              src={URL.createObjectURL(recordedBlob)}
-                              controls
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
-                        )}
+                          <div className="space-y-4">
+                            {/* Video size info */}
+                            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <Badge
+                                  variant="default"
+                                  className="bg-green-600"
+                                >
+                                  ✓ Video đã ghi thành công
+                                </Badge>
+                                <span className="text-sm text-muted-foreground">
+                                  Kích thước:{" "}
+                                  {(recordedBlob.size / (1024 * 1024)).toFixed(
+                                    1
+                                  )}{" "}
+                                  MB
+                                </span>
+                              </div>
 
-                        <div className="flex flex-col sm:flex-row justify-between gap-4 pt-4 border-t">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  setShowVideoPreview(!showVideoPreview)
+                                }
+                              >
+                                {showVideoPreview ? "Ẩn video" : "Xem video"}
+                              </Button>
+                            </div>
+
+                            {/* Video preview - chỉ render khi cần thiết */}
+                            {showVideoPreview && videoObjectUrl && (
+                              <div className="aspect-video bg-black rounded-lg overflow-hidden border-2 border-border">
+                                <video
+                                  src={videoObjectUrl}
+                                  controls
+                                  preload="metadata" // Chỉ load metadata thay vì toàn bộ video
+                                  className="w-full h-full object-contain"
+                                  onLoadStart={() => {
+                                    console.log("Video started loading");
+                                  }}
+                                  onError={(e) => {
+                                    console.error("Video load error:", e);
+                                    toast.error("Không thể load video preview");
+                                  }}
+                                />
+                              </div>
+                            )}
+
+                            {!showVideoPreview && (
+                              <div className="aspect-video bg-muted rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center">
+                                <div className="text-center text-muted-foreground">
+                                  <Video className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                                  <p className="text-sm">
+                                    Nhấn "Xem video" để preview
+                                  </p>
+                                  <p className="text-xs mt-1">
+                                    Tiết kiệm RAM khi không xem
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}                        <div className="flex flex-col sm:flex-row justify-between gap-4 pt-4 border-t">
                           <div className="flex gap-3">
                             <Button
                               variant="outline"
                               onClick={downloadRecording}
                               size="lg"
                               className="px-6"
+                              disabled={!recordedBlob}
                             >
                               <Download className="h-4 w-4 mr-2" />
                               Tải xuống
                             </Button>
+                            
+                            <Button
+                              variant="default"
+                              onClick={retryUpload}
+                              size="lg"
+                              className="px-6"
+                              disabled={!recordedBlob}
+                            >
+                              🔄 Upload lại
+                            </Button>
                           </div>
 
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Badge variant="default" className="bg-green-600">
-                              ✓ Đã upload thành công
+                            <Badge variant="default" className="bg-blue-600">
+                              📝 Đã lưu vào diary
                             </Badge>
                           </div>
                         </div>

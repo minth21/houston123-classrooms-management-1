@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '100mb', // Tăng giới hạn lên 50MB cho video files
+    },
+  },
 };
 
 export default nextConfig;

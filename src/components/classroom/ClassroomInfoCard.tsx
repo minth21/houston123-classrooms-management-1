@@ -27,15 +27,14 @@ import { toast } from "sonner";
 
 interface ClassroomInfoCardProps {
   classroom: Classroom;
-  attendanceId?: string; // ID của attendance record hiện tại
-  onRecordingUpload?: (file: File, attendanceId: string) => Promise<void>;
+  attendanceId?: string; // ID của attendance record hiện tại (deprecated - not used anymore)
 }
 
 export function ClassroomInfoCard({
   classroom,
   attendanceId,
-  onRecordingUpload,
-}: ClassroomInfoCardProps) {  const [isRecordingModalOpen, setIsRecordingModalOpen] = useState(false);
+}: ClassroomInfoCardProps) {
+  const [isRecordingModalOpen, setIsRecordingModalOpen] = useState(false);
   const [testMode, setTestMode] = useState(false);
   const [lastKeyPressTime, setLastKeyPressTime] = useState(0);
 
@@ -43,16 +42,16 @@ export function ClassroomInfoCard({
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Simple keyboard shortcut: Ctrl + Shift + T
-      if (event.ctrlKey && event.shiftKey && event.key === 'T') {
+      if (event.ctrlKey && event.shiftKey && event.key === "T") {
         event.preventDefault(); // Prevent browser default behavior
-        
+
         const now = Date.now();
         // Debounce: only allow toggle every 500ms
         if (now - lastKeyPressTime < 500) {
           return;
         }
         setLastKeyPressTime(now);
-        
+
         setTestMode((current) => {
           const newMode = !current;
           toast.success(
@@ -258,9 +257,7 @@ export function ClassroomInfoCard({
             <br />
             <span className="text-xs opacity-75">
               Tắt: Click 7x góc phải hoặc nhấn{" "}
-              <kbd className="bg-yellow-200 px-1 rounded">
-                Ctrl+Shift+T
-              </kbd>
+              <kbd className="bg-yellow-200 px-1 rounded">Ctrl+Shift+T</kbd>
             </span>
           </div>
         )}
@@ -297,39 +294,14 @@ export function ClassroomInfoCard({
         </div>
       </CardContent>{" "}
       {/* Recording Modal */}
-      {isRecordingModalOpen &&
-        (attendanceId || testMode) &&
-        (onRecordingUpload || testMode) && (
-          <RecordingModal
-            isOpen={isRecordingModalOpen}
-            onClose={() => setIsRecordingModalOpen(false)}
-            onUpload={
-              testMode && !onRecordingUpload
-                ? (file: File) => {
-                    console.log(
-                      "🧪 TEST MODE: Would upload file:",
-                      file.name,
-                      file.size,
-                      "bytes"
-                    );
-                    toast.success(
-                      `🧪 TEST: Đã "upload" file ${file.name} (${Math.round(
-                        file.size / 1024
-                      )}KB)`
-                    );
-                    return Promise.resolve();
-                  }
-                : (file: File) =>
-                    onRecordingUpload!(
-                      file,
-                      attendanceId || "test-attendance-id"
-                    )
-            }
-            classroomName={`${classroom.subjectName}${
-              testMode ? " (TEST)" : ""
-            }`}
-          />
-        )}
+      {isRecordingModalOpen && (
+        <RecordingModal
+          isOpen={isRecordingModalOpen}
+          onClose={() => setIsRecordingModalOpen(false)}
+          classCode={classroom.classID}
+          classroomName={`${classroom.subjectName}${testMode ? " (TEST)" : ""}`}
+        />
+      )}
     </Card>
   );
 }

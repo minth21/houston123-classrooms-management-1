@@ -77,39 +77,30 @@ interface Recording {
 
 export default function ClassroomDetailPage() {
   const params = useParams();
-  const classId = typeof params.id === "string" ? params.id : Array.isArray(params.id) ? params.id[0] : "";
+  const classId =
+    typeof params.id === "string"
+      ? params.id
+      : Array.isArray(params.id)
+      ? params.id[0]
+      : "";
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [recordingSettings, setRecordingSettings] = useState<RecordingSettings>();
-  const [currentClassData, setCurrentClassData] = useState<Classroom | null>(null);
-
-  // Fetch classroom data
-  const fetchClassroomData = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const classrooms = await classroomService.getClassrooms();
-      const classroom = classrooms.find(c => c.classID === classId);
-      if (!classroom) {
-        throw new Error("Classroom not found");
-      }
-      setCurrentClassData(classroom);
-    } catch (err) {
-      setError("Failed to load classroom data");
-      setCurrentClassData(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [recordingSettings, setRecordingSettings] =
+    useState<RecordingSettings>();
+  const [currentClassData, setCurrentClassData] = useState<Classroom | null>(
+    null
+  );
 
   // Fetch attendance data
   const fetchAttendanceData = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const attendanceData = await classroomService.getClassroomAttendance(classId);
+      const attendanceData = await classroomService.getClassroomAttendance(
+        classId
+      );
       setAttendance(attendanceData);
     } catch (err) {
       setError("Failed to load classroom data");
@@ -135,45 +126,15 @@ export default function ClassroomDetailPage() {
       content,
       files,
     });
-    // TODO: Implement diary entries fetching
-  };
-  // Handle recording upload for live class
-  const handleLiveRecordingUpload = async (file: File, attendanceId: string) => {
-    try {
-      await classroomService.postComment({
-        attendanceId,
-        content: "Video ghi hình buổi học",
-        files: [file],
-      });
-
-      await fetchAttendanceData();
-      toast.success("Upload video thành công!");
-    } catch (error) {
-      console.error("Error uploading recording:", error);
-      toast.error("Có lỗi xảy ra khi upload video");
-      throw error;
-    }
   };
 
   // Get current attendance ID for today
   const getCurrentAttendanceId = () => {
-    const today = new Date().toISOString().split('T')[0];
-    const todayAttendance = attendance.find(record => 
+    const today = new Date().toISOString().split("T")[0];
+    const todayAttendance = attendance.find((record) =>
       record.date.startsWith(today)
     );
     return todayAttendance?._id;
-  };
-
-  // TODO: Implement recording settings API integration
-  const handleSaveRecordingSettings = async (settings: RecordingSettings) => {
-    try {
-      // TODO: Call API to save settings
-      setRecordingSettings(settings);
-      toast.success("Đã lưu cấu hình ghi hình thành công");
-    } catch (error) {
-      console.error("Error saving recording settings:", error);
-      toast.error("Có lỗi xảy ra khi lưu cấu hình ghi hình");
-    }
   };
 
   // Load data on mount
@@ -187,10 +148,10 @@ export default function ClassroomDetailPage() {
           setError(null);
           const [classrooms, attendanceData] = await Promise.all([
             classroomService.getClassrooms(),
-            classroomService.getClassroomAttendance(classId)
+            classroomService.getClassroomAttendance(classId),
           ]);
           if (isMounted) {
-            const classroom = classrooms.find(c => c.classID === classId);
+            const classroom = classrooms.find((c) => c.classID === classId);
             if (!classroom) {
               throw new Error("Classroom not found");
             }
@@ -243,11 +204,10 @@ export default function ClassroomDetailPage() {
   return (
     <div className="container mx-auto p-4">
       <Toaster />
-      <DashboardHeader 
+      <DashboardHeader
         title={currentClassData.classID}
         description={currentClassData.subjectName}
       />
-
       <div className="mb-4">
         <Link href="/dashboard/classrooms">
           <Button variant="ghost" className="gap-2">
@@ -255,53 +215,30 @@ export default function ClassroomDetailPage() {
             Quay lại
           </Button>
         </Link>
-      </div>      <div className="grid gap-4">
-        <ClassroomInfoCard 
-          classroom={currentClassData} 
+      </div>{" "}
+      <div className="grid gap-4">
+        <ClassroomInfoCard
+          classroom={currentClassData}
           attendanceId={getCurrentAttendanceId()}
-          onRecordingUpload={handleLiveRecordingUpload}
         />
 
         <Tabs defaultValue="attendance" className="w-full">
           <TabsList>
             <TabsTrigger value="attendance">Điểm danh</TabsTrigger>
             <TabsTrigger value="diary">Nhật ký</TabsTrigger>
-            <TabsTrigger value="recording">Ghi hình</TabsTrigger>
           </TabsList>
-
           <TabsContent value="attendance">
             <AttendanceTable
               attendance={attendance}
               onCommentSubmit={handleCommentSubmit}
             />
           </TabsContent>
-
           <TabsContent value="diary">
             <ClassroomDiary
               diaryEntries={diaryEntries}
               onDiarySubmit={handleDiarySubmit}
             />
-          </TabsContent>          <TabsContent value="recording">
-            <RecordingControls
-              onUpload={(recording: any) => {
-                if (!recording.blob) {
-                  throw new Error("No recording to upload");
-                }
-
-                const file = new File([recording.blob], `recording-${Date.now()}.webm`, {
-                  type: "video/webm",
-                });
-
-                const attendanceId = getCurrentAttendanceId();
-                if (!attendanceId) {
-                  throw new Error("No attendance record found for today");
-                }
-
-                return handleLiveRecordingUpload(file, attendanceId);
-              }}
-              recordingSettings={recordingSettings}
-            />
-          </TabsContent>
+          </TabsContent>{" "}
         </Tabs>
       </div>
     </div>
