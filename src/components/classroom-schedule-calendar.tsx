@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useStaff } from "@/context/staff-context";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Classroom } from "@/lib/api/classroom";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,20 +13,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, isSameDay } from "date-fns";
+import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import {
   Clock,
   MapPin,
   Users,
-  BookOpen,
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
@@ -41,7 +33,7 @@ import { DayViewCalendar } from "./calendar/DayViewCalendar";
 import { WeekViewCalendar } from "./calendar/WeekViewCalendar";
 import { MonthViewCalendar } from "./calendar/MonthViewCalendar";
 import { ListViewCalendar } from "./calendar/ListViewCalendar";
-import { getCombinedSchedules, isDateInRange, isUpcoming } from "@/lib/utils/calendarUtils";
+import { getCombinedSchedules, isUpcoming } from "@/lib/utils/calendarUtils";
 
 // Days of week in Vietnamese
 const DAYS_OF_WEEK = [
@@ -59,16 +51,6 @@ const DAYS_SHORT = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 
 // Hour slots for the schedule (5AM to 10PM)
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 5);
-
-interface ValidSchedule {
-  classRoomCode: string | null;
-  dayOfWeek: number;
-  beginTime: string;
-  finishTime: string;
-  validFrom: Date | null;
-  validTo: Date | null;
-  type: "schedule" | "schoolShift";
-}
 
 interface ClassScheduleCalendarProps {
   classrooms: Classroom[];
@@ -89,12 +71,13 @@ export default function ClassScheduleCalendar({
 }: ClassScheduleCalendarProps) {
   const [date, setDate] = useState<Date>(initialDate);
   const [view, setView] = useState<CalendarView>(initialView);
-  const [selectedClass, setSelectedClass] = useState<ScheduledClass | null>(null);
+  const [selectedClass, setSelectedClass] = useState<ScheduledClass | null>(
+    null
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [displayDates, setDisplayDates] = useState<Date[]>([]);
   const [calendarIsOpen, setCalendarIsOpen] = useState(false);
   const [autoTransition, setAutoTransition] = useState(false);
-  const autoTransitionInterval = useRef<NodeJS.Timeout | undefined>(undefined);
   const { staff, loading: staffLoading } = useStaff();
 
   // Enhanced color palette with better contrast and more distinct colors
@@ -131,7 +114,7 @@ export default function ClassScheduleCalendar({
   const handleViewChange = (newView: CalendarView) => {
     setView(newView);
     onViewChange?.(newView);
-  };  // Process classrooms into scheduled classes
+  }; // Process classrooms into scheduled classes
   const processSchedules = (classroomsToProcess: Classroom[]) => {
     const subjectColorMap = new Map();
     const processed: ScheduledClass[] = [];
@@ -145,17 +128,24 @@ export default function ClassScheduleCalendar({
         schoolShift: classroom.schoolShift,
         isActive: classroom.isActive,
         teacherCode: classroom.teacherCode,
-        supporter: classroom.supporter
+        supporter: classroom.supporter,
       });
 
       // Check if user has access to this classroom
       if (
-        !(showAllClasses ||
-          (!staffLoading && staff &&
+        !(
+          showAllClasses ||
+          (!staffLoading &&
+            staff &&
             (classroom.teacherCode === staff?.userId ||
-              (classroom.supporter && classroom.supporter.includes(staff?.userId)))))
+              (classroom.supporter &&
+                classroom.supporter.includes(staff?.userId))))
+        )
       ) {
-        console.log("Skipping classroom due to access control:", classroom.classID);
+        console.log(
+          "Skipping classroom due to access control:",
+          classroom.classID
+        );
         return;
       }
 
@@ -167,7 +157,12 @@ export default function ClassScheduleCalendar({
 
       // Get all valid schedules for this classroom
       const validSchedules = getCombinedSchedules(classroom);
-      console.log("Valid schedules for", classroom.classID, ":", validSchedules);
+      console.log(
+        "Valid schedules for",
+        classroom.classID,
+        ":",
+        validSchedules
+      );
 
       if (validSchedules.length > 0) {
         // Assign a consistent color based on subject name
@@ -175,7 +170,8 @@ export default function ClassScheduleCalendar({
         if (!color) {
           color = colors[subjectColorMap.size % colors.length];
           subjectColorMap.set(classroom.subjectName, color);
-        }        validSchedules.forEach((schedule, index) => {
+        }
+        validSchedules.forEach((schedule, index) => {
           const status = isUpcoming(schedule.beginTime, schedule.dayOfWeek);
           const processedClass: ScheduledClass = {
             id: `${classroom.classID}-${index}-${schedule.type}`,
@@ -194,19 +190,25 @@ export default function ClassScheduleCalendar({
           processed.push(processedClass);
         });
       }
-    });    console.log("Total processed classes:", processed.length);
-    
+    });
+    console.log("Total processed classes:", processed.length);
+
     // Additional check for duplicates at the end
     const duplicateCheck = new Map();
-    processed.forEach(cls => {
+    processed.forEach((cls) => {
       const key = `${cls.classId}-${cls.day}-${cls.startTime}-${cls.endTime}`;
       if (duplicateCheck.has(key)) {
-        console.warn("Duplicate class found:", cls, "Original:", duplicateCheck.get(key));
+        console.warn(
+          "Duplicate class found:",
+          cls,
+          "Original:",
+          duplicateCheck.get(key)
+        );
       } else {
         duplicateCheck.set(key, cls);
       }
     });
-    
+
     return processed;
   };
 
@@ -219,11 +221,18 @@ export default function ClassScheduleCalendar({
   }, [classrooms, staff, staffLoading, showAllClasses]);
   // Filter schedules by date range based on current view
   const scheduledClasses = useMemo(() => {
-    console.log("Filtering schedules. View:", view, "Date:", date, "Total schedules:", processedSchedules.length);
-    
+    console.log(
+      "Filtering schedules. View:",
+      view,
+      "Date:",
+      date,
+      "Total schedules:",
+      processedSchedules.length
+    );
+
     // For different views, we need different date ranges
     let startDate: Date, endDate: Date;
-    
+
     switch (view) {
       case "day":
         startDate = new Date(date);
@@ -236,18 +245,23 @@ export default function ClassScheduleCalendar({
         // Get end of week (Saturday)
         endDate = new Date(startDate);
         endDate.setDate(startDate.getDate() + 6);
-        break;      case "month":
+        break;
+      case "month":
         // For month view, we need to show all days visible in the calendar grid
         // This includes days from previous and next month to fill the grid
         const firstOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
         const firstDayOfWeek = firstOfMonth.getDay(); // 0 = Sunday
-        
+
         // Start from the Sunday of the week containing the first day of month
         startDate = new Date(firstOfMonth);
         startDate.setDate(1 - firstDayOfWeek);
-        
+
         // End at the Saturday of the week containing the last day of month
-        const lastOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        const lastOfMonth = new Date(
+          date.getFullYear(),
+          date.getMonth() + 1,
+          0
+        );
         endDate = new Date(lastOfMonth);
         const remainingDays = 6 - lastOfMonth.getDay();
         endDate.setDate(lastOfMonth.getDate() + remainingDays);
@@ -263,28 +277,40 @@ export default function ClassScheduleCalendar({
         startDate = new Date(date);
         endDate = new Date(date);
     }
-    
-    console.log("Date range:", { startDate, endDate, view });    const filteredClasses = processedSchedules.filter(classItem => {
+
+    console.log("Date range:", { startDate, endDate, view });
+    const filteredClasses = processedSchedules.filter((classItem) => {
       const targetDay = classItem.day; // 0=Sunday, 1=Monday, etc.
-      
+
       // Calculate the number of days in our range
-      const rangeDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      
-      console.log(`Checking class ${classItem.classId} (day ${targetDay}) against range ${rangeDays} days`);
-      
+      const rangeDays =
+        Math.ceil(
+          (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+        ) + 1;
+
+      console.log(
+        `Checking class ${classItem.classId} (day ${targetDay}) against range ${rangeDays} days`
+      );
+
       // Check if any day in the range matches the target day of week
       if (rangeDays >= 7) {
         // Range spans a full week or more, so it definitely includes this day
-        console.log("Class", classItem.classId, "day", targetDay, "included (range >= 7 days)");
+        console.log(
+          "Class",
+          classItem.classId,
+          "day",
+          targetDay,
+          "included (range >= 7 days)"
+        );
         return true;
       }
-      
+
       // For shorter ranges (like day view or partial week)
       const startDay = startDate.getDay();
       const endDay = endDate.getDay();
-      
+
       let includesDay = false;
-      
+
       if (rangeDays === 1) {
         // Single day view - only include if target day matches exactly
         includesDay = targetDay === startDay;
@@ -295,16 +321,36 @@ export default function ClassScheduleCalendar({
         // Range wraps around the week (e.g., Saturday to Monday)
         includesDay = targetDay >= startDay || targetDay <= endDay;
       }
-      
+
       if (includesDay) {
-        console.log("Class", classItem.classId, "day", targetDay, "found in range", startDay, "to", endDay, `(${rangeDays} days)`);
+        console.log(
+          "Class",
+          classItem.classId,
+          "day",
+          targetDay,
+          "found in range",
+          startDay,
+          "to",
+          endDay,
+          `(${rangeDays} days)`
+        );
       } else {
-        console.log("Class", classItem.classId, "day", targetDay, "NOT in range", startDay, "to", endDay, `(${rangeDays} days)`);
+        console.log(
+          "Class",
+          classItem.classId,
+          "day",
+          targetDay,
+          "NOT in range",
+          startDay,
+          "to",
+          endDay,
+          `(${rangeDays} days)`
+        );
       }
-      
+
       return includesDay;
     });
-    
+
     console.log("Filtered classes for display:", filteredClasses.length);
     return filteredClasses;
   }, [processedSchedules, date, view]);
@@ -355,7 +401,11 @@ export default function ClassScheduleCalendar({
         break;
       case "month":
         // Get the start of the month
-        const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        const startOfMonth = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          1
+        );
         // Get the day of week of the first day (0 = Sunday)
         const firstDayOfWeek = startOfMonth.getDay();
         // Get the start date (previous month's dates to fill the first week)
@@ -413,7 +463,10 @@ export default function ClassScheduleCalendar({
             <ChevronRight className="h-4 w-4" />
           </Button>
 
-          <Tabs value={view} onValueChange={(value) => handleViewChange(value as CalendarView)}>
+          <Tabs
+            value={view}
+            onValueChange={(value) => handleViewChange(value as CalendarView)}
+          >
             <TabsList>
               <TabsTrigger value="day">
                 <CalendarIcon className="mr-2 h-4 w-4" />

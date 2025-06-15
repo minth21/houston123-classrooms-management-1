@@ -5,50 +5,14 @@ import { useParams } from "next/navigation";
 import {
   classroomService,
   type Attendance,
-  type RecordingSettings,
   type Classroom,
 } from "@/lib/api/classroom";
-import { Toaster, toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Toaster } from "sonner";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import {
-  Calendar,
-  Clock,
-  FileText,
-  MessageSquare,
-  ChevronLeft,
-  Users,
-  Video,
-  StopCircle,
-  AlertCircle,
-} from "lucide-react";
+
+import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import DashboardHeader from "@/components/dashboard-header";
 import Loader from "@/components/loader";
@@ -56,7 +20,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ClassroomInfoCard } from "@/components/classroom/ClassroomInfoCard";
 import { AttendanceTable } from "@/components/classroom/AttendanceTable";
 import { ClassroomDiary } from "@/components/classroom/ClassroomDiary";
-import { RecordingControls } from "@/components/classroom/RecordingControls";
 
 interface DiaryEntry {
   id: string;
@@ -64,15 +27,6 @@ interface DiaryEntry {
   content: string;
   author: string;
   attachments: any[];
-}
-
-interface Recording {
-  id: string;
-  stream: MediaStream;
-  recorder: MediaRecorder;
-  isRecording: boolean;
-  blob?: Blob;
-  classCode?: string;
 }
 
 export default function ClassroomDetailPage() {
@@ -87,8 +41,6 @@ export default function ClassroomDetailPage() {
   const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [recordingSettings, setRecordingSettings] =
-    useState<RecordingSettings>();
   const [currentClassData, setCurrentClassData] = useState<Classroom | null>(
     null
   );

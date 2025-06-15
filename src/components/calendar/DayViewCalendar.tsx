@@ -1,7 +1,18 @@
 import { ScheduledClass } from "@/types/calendar";
-import { DAYS_SHORT, HOURS, formatTime, getClassPosition, getClassTimePeriod } from "@/lib/utils/calendarUtils";
+import {
+  DAYS_SHORT,
+  HOURS,
+  formatTime,
+  getClassPosition,
+  getClassTimePeriod,
+} from "@/lib/utils/calendarUtils";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface DayViewCalendarProps {
   date: Date;
@@ -13,17 +24,20 @@ export function DayViewCalendar({
   date,
   scheduledClasses,
   onClassClick,
-}: DayViewCalendarProps) {  const allDayClasses = scheduledClasses.filter(
+}: DayViewCalendarProps) {
+  const allDayClasses = scheduledClasses.filter(
     (classItem) => classItem.day === date.getDay()
   );
-  
-  // Deduplicate classes based on classId, startTime, and endTime
+
   const dayClasses = allDayClasses.filter((classItem, index, array) => {
-    return array.findIndex(c => 
-      c.classId === classItem.classId && 
-      c.startTime === classItem.startTime && 
-      c.endTime === classItem.endTime
-    ) === index;
+    return (
+      array.findIndex(
+        (c) =>
+          c.classId === classItem.classId &&
+          c.startTime === classItem.startTime &&
+          c.endTime === classItem.endTime
+      ) === index
+    );
   });
 
   return (
@@ -54,21 +68,16 @@ export function DayViewCalendar({
           <div className="ml-16">
             {/* Hour grid lines */}
             {HOURS.map((hour) => (
-              <div
-                key={hour}
-                className="h-16 border-b last:border-b-0"
-              />
-            ))}            {/* Classes */}
+              <div key={hour} className="h-16 border-b last:border-b-0" />
+            ))}
+
+            {/* Classes */}
             {dayClasses.map((classItem) => {
               const period = getClassTimePeriod(
                 classItem.startTime,
                 classItem.endTime
               );
               const topRem = getClassPosition(classItem.startTime);
-              
-              // Debug logging
-              console.log(`Class ${classItem.subjectName} (${classItem.startTime}-${classItem.endTime}): topRem=${topRem}, height=${period * 4}rem`);
-
               return (
                 <TooltipProvider key={classItem.id}>
                   <Tooltip>
@@ -89,9 +98,7 @@ export function DayViewCalendar({
                           {formatTime(classItem.startTime)} -{" "}
                           {formatTime(classItem.endTime)}
                         </div>
-                        <div className="text-sm">
-                          Phòng: {classItem.roomId}
-                        </div>
+                        <div className="text-sm">Phòng: {classItem.roomId}</div>
                         <div className="text-sm">
                           Giáo viên: {classItem.teacherName}
                         </div>
@@ -111,9 +118,7 @@ export function DayViewCalendar({
                           {formatTime(classItem.startTime)} -{" "}
                           {formatTime(classItem.endTime)}
                         </div>
-                        <div className="text-sm">
-                          Phòng: {classItem.roomId}
-                        </div>
+                        <div className="text-sm">Phòng: {classItem.roomId}</div>
                         <div className="text-sm">
                           Giáo viên: {classItem.teacherName}
                         </div>

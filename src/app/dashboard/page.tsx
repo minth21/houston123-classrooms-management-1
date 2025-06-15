@@ -8,7 +8,7 @@ import { classroomService, Classroom } from "@/lib/api/classroom";
 import ClassScheduleCalendar from "@/components/classroom-schedule-calendar";
 import DashboardHeader from "@/components/dashboard-header";
 import Loader from "@/components/loader";
-import { Search, Calendar, Clock, Users, BookOpen } from "lucide-react";
+import { Search, Calendar } from "lucide-react";
 
 // Define a calendar view type
 type CalendarView = "day" | "week" | "month" | "list";
@@ -59,9 +59,9 @@ export default function SchedulePage() {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await classroomService.getClassrooms();      // Filter out classrooms with no schedule data to avoid empty entries
+      const data = await classroomService.getClassrooms(); // Filter out classrooms with no schedule data to avoid empty entries
       const filteredData = data.filter(
-        (classroom) => 
+        (classroom) =>
           (classroom.schedule && classroom.schedule.length > 0) ||
           (classroom.schoolShift && classroom.schoolShift.length > 0)
       );
@@ -143,7 +143,8 @@ export default function SchedulePage() {
       );
     }
 
-    return (      <ClassScheduleCalendar
+    return (
+      <ClassScheduleCalendar
         classrooms={filteredClassrooms}
         initialView={calendarView}
         initialDate={calendarDate}

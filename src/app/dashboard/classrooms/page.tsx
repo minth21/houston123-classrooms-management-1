@@ -54,10 +54,7 @@ export default function ClassroomsPage() {
       }
 
       const data = await classroomService.getClassrooms();
-      const filteredData = data.filter(
-        (c) =>
-          c.teacherCode === staff.userId
-      );
+      const filteredData = data.filter((c) => c.teacherCode === staff.userId);
 
       setClassrooms(filteredData);
       setFilteredClassrooms(filteredData);

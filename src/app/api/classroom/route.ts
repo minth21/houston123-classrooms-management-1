@@ -7,14 +7,14 @@ export async function GET(request: NextRequest) {
   try {
     // Get the token from cookies
     const token = request.cookies.get("token")?.value;
-    
+
     if (!token) {
       return NextResponse.json(
         { error: "No authentication token found" },
         { status: 401 }
       );
-    }    console.log("Fetching classrooms from ERP API...");
-    console.log("Token being sent:", token ? `${token.substring(0, 20)}...` : "No token");    // Get additional headers from the request
+    }
+    console.log("Fetching classrooms from ERP API...");
     const xCompany = request.headers.get("x-company");
     const xBranch = request.headers.get("x-branch");
 
@@ -24,12 +24,14 @@ export async function GET(request: NextRequest) {
     console.log("Query parameters:", queryString);
 
     // Forward the request to the ERP API with query parameters
-    const url = `${ERP_API_URL}/api/classroom${queryString ? `?${queryString}` : ''}`;
+    const url = `${ERP_API_URL}/api/classroom${
+      queryString ? `?${queryString}` : ""
+    }`;
     console.log("ERP URL:", url);
-    
+
     const response = await axios.get(url, {
       headers: {
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
         ...(xCompany && { "x-company": xCompany }),
         ...(xBranch && { "x-branch": xBranch }),
@@ -40,7 +42,7 @@ export async function GET(request: NextRequest) {
     console.log("ERP API Response:", {
       status: response.status,
       hasData: !!response.data,
-      responseData: response.data // Log the actual response for debugging
+      responseData: response.data,
     });
 
     if (response.status === 200) {
@@ -55,13 +57,13 @@ export async function GET(request: NextRequest) {
     console.error("Classroom fetch error:", {
       message: error.message,
       response: error.response?.data,
-      status: error.response?.status
+      status: error.response?.status,
     });
-    
+
     return NextResponse.json(
-      { 
+      {
         error: "Failed to fetch classrooms",
-        details: error.response?.data || error.message 
+        details: error.response?.data || error.message,
       },
       { status: error.response?.status || 500 }
     );

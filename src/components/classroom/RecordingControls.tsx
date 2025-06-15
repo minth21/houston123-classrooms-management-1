@@ -18,7 +18,10 @@ interface RecordingControlsProps {
   recordingSettings?: RecordingSettings;
 }
 
-export function RecordingControls({ onUpload, recordingSettings }: RecordingControlsProps) {
+export function RecordingControls({
+  onUpload,
+  recordingSettings,
+}: RecordingControlsProps) {
   const [recording, setRecording] = useState<Recording | null>(null);
   const [recordingError, setRecordingError] = useState<string | null>(null);
 
@@ -113,9 +116,7 @@ export function RecordingControls({ onUpload, recordingSettings }: RecordingCont
         )}
 
         {recording?.blob && !recording.isRecording && (
-          <Button onClick={handleUpload}>
-            Tải video lên
-          </Button>
+          <Button onClick={handleUpload}>Tải video lên</Button>
         )}
       </div>
 
@@ -128,11 +129,15 @@ export function RecordingControls({ onUpload, recordingSettings }: RecordingCont
 
       {recording?.stream && (
         <video
-          src={recording.stream ? URL.createObjectURL(recording.blob || new Blob()) : undefined}
+          src={
+            recording.stream
+              ? URL.createObjectURL(recording.blob || new Blob())
+              : undefined
+          }
           className="w-full rounded-lg"
           controls
         />
       )}
     </div>
   );
-} 
+}

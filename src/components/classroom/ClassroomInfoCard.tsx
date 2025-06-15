@@ -8,15 +8,7 @@ import {
 import { Calendar, Clock, Users, AlertCircle, Video } from "lucide-react";
 import { Classroom } from "@/lib/api/classroom";
 import { DAYS_OF_WEEK } from "@/lib/utils/calendarUtils";
-import {
-  format,
-  isToday,
-  isTomorrow,
-  addDays,
-  parse,
-  isAfter,
-  isBefore,
-} from "date-fns";
+import { format, isTomorrow, addDays } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,7 +19,7 @@ import { toast } from "sonner";
 
 interface ClassroomInfoCardProps {
   classroom: Classroom;
-  attendanceId?: string; // ID của attendance record hiện tại (deprecated - not used anymore)
+  attendanceId?: string;
 }
 
 export function ClassroomInfoCard({

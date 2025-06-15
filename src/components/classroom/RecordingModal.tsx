@@ -416,11 +416,17 @@ export function RecordingModal({
                 1
               )} MB), upload có thể mất nhiều thời gian...`
             );
-          }          const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+          }
+          const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
           const fileName = `recording-${classroomName}-${timestamp}.webm`;
           const file = new File([blob], fileName, { type: "video/webm" });
 
-          await uploadToDiary(file, `Video bài học được ghi lại - ${classroomName} - ${new Date().toLocaleString('vi-VN')}`);
+          await uploadToDiary(
+            file,
+            `Video bài học được ghi lại - ${classroomName} - ${new Date().toLocaleString(
+              "vi-VN"
+            )}`
+          );
           toast.success("Ghi hình và upload thành công!");
           onClose(); // Đóng modal sau khi upload thành công
         } catch (error) {
@@ -532,17 +538,24 @@ export function RecordingModal({
     { value: 30, label: "30 FPS - Chuẩn" },
     { value: 25, label: "25 FPS - Tiết kiệm ⭐" },
     { value: 24, label: "24 FPS - Điện ảnh" },
-    { value: 15, label: "15 FPS - Tiết kiệm tối đa" },  ];
+    { value: 15, label: "15 FPS - Tiết kiệm tối đa" },
+  ];
 
   // Upload video to diary API
-  const uploadToDiary = async (file: File, content: string = "Video bài học được ghi lại") => {
-    try {      const formData = new FormData();
-      formData.append('content', content);
-      formData.append('file1', file); // Use numbered file naming pattern like the API expects      // Get company and branch from localStorage for headers
+  const uploadToDiary = async (
+    file: File,
+    content: string = "Video bài học được ghi lại"
+  ) => {
+    try {
+      const formData = new FormData();
+      formData.append("content", content);
+      formData.append("file1", file); // Use numbered file naming pattern like the API expects      // Get company and branch from localStorage for headers
       const selectedCompany = localStorage.getItem("selectedCompany");
       const selectedBranch = localStorage.getItem("selectedBranch");
-      const cachedBranches = JSON.parse(localStorage.getItem("cached_branches") || "[]");
-      
+      const cachedBranches = JSON.parse(
+        localStorage.getItem("cached_branches") || "[]"
+      );
+
       const headers: Record<string, string> = {};
       if (selectedCompany) {
         headers["x-company"] = selectedCompany;
@@ -558,21 +571,23 @@ export function RecordingModal({
       }
 
       const response = await fetch(`/api/classroom/${classCode}/diary/post`, {
-        method: 'POST',
+        method: "POST",
         body: formData,
-        credentials: 'include', // Include cookies for authentication
+        credentials: "include", // Include cookies for authentication
         headers,
       });
 
       if (!response.ok) {
         const errorData = await response.text();
-        throw new Error(`Upload failed: ${response.status} ${response.statusText} - ${errorData}`);
+        throw new Error(
+          `Upload failed: ${response.status} ${response.statusText} - ${errorData}`
+        );
       }
 
       const result = await response.json();
       return result;
     } catch (error) {
-      console.error('Diary upload error:', error);
+      console.error("Diary upload error:", error);
       throw error;
     }
   };
@@ -580,19 +595,25 @@ export function RecordingModal({
   // Retry upload function
   const retryUpload = async () => {
     if (!recordedBlob) return;
-    
+
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
       const fileName = `recording-${classroomName}-${timestamp}.webm`;
       const file = new File([recordedBlob], fileName, { type: "video/webm" });
 
       toast.info("Đang thử upload lại...");
-      await uploadToDiary(file, `Video bài học được ghi lại - ${classroomName} - ${new Date().toLocaleString('vi-VN')}`);
+      await uploadToDiary(
+        file,
+        `Video bài học được ghi lại - ${classroomName} - ${new Date().toLocaleString(
+          "vi-VN"
+        )}`
+      );
       toast.success("Upload thành công!");
       onClose();
     } catch (error) {
       console.error("Retry upload error:", error);
-      const errorMessage = error instanceof Error ? error.message : "Lỗi không xác định";
+      const errorMessage =
+        error instanceof Error ? error.message : "Lỗi không xác định";
       toast.error(`Upload thất bại: ${errorMessage}`);
     }
   };
@@ -1342,7 +1363,8 @@ export function RecordingModal({
                               </div>
                             )}
                           </div>
-                        )}                        <div className="flex flex-col sm:flex-row justify-between gap-4 pt-4 border-t">
+                        )}{" "}
+                        <div className="flex flex-col sm:flex-row justify-between gap-4 pt-4 border-t">
                           <div className="flex gap-3">
                             <Button
                               variant="outline"
@@ -1354,7 +1376,7 @@ export function RecordingModal({
                               <Download className="h-4 w-4 mr-2" />
                               Tải xuống
                             </Button>
-                            
+
                             <Button
                               variant="default"
                               onClick={retryUpload}

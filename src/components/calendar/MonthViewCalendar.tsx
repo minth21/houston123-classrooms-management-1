@@ -1,7 +1,12 @@
 import { ScheduledClass } from "@/types/calendar";
 import { DAYS_SHORT, formatTime } from "@/lib/utils/calendarUtils";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface MonthViewCalendarProps {
   displayDates: Date[];
@@ -15,25 +20,33 @@ export function MonthViewCalendar({
   scheduledClasses,
   onClassClick,
   currentDate = new Date(),
-}: MonthViewCalendarProps) {  const getClassesForDate = (date: Date) => {
+}: MonthViewCalendarProps) {
+  const getClassesForDate = (date: Date) => {
     const classesForDay = scheduledClasses.filter(
       (classItem) => classItem.day === date.getDay()
     );
-    
+
     // Deduplicate classes based on classId, startTime, and endTime
     const uniqueClasses = classesForDay.filter((classItem, index, array) => {
-      return array.findIndex(c => 
-        c.classId === classItem.classId && 
-        c.startTime === classItem.startTime && 
-        c.endTime === classItem.endTime
-      ) === index;
+      return (
+        array.findIndex(
+          (c) =>
+            c.classId === classItem.classId &&
+            c.startTime === classItem.startTime &&
+            c.endTime === classItem.endTime
+        ) === index
+      );
     });
-    
+
     // Debug logging to check for duplicates
     if (classesForDay.length !== uniqueClasses.length) {
-      console.log(`Date ${date.toDateString()}: Found ${classesForDay.length} classes, reduced to ${uniqueClasses.length} unique classes`);
+      console.log(
+        `Date ${date.toDateString()}: Found ${
+          classesForDay.length
+        } classes, reduced to ${uniqueClasses.length} unique classes`
+      );
     }
-    
+
     return uniqueClasses;
   };
 
@@ -42,10 +55,7 @@ export function MonthViewCalendar({
       {/* Header with day names */}
       <div className="grid grid-cols-7 border-b">
         {DAYS_SHORT.map((day, index) => (
-          <div
-            key={index}
-            className="border-r p-2 text-center last:border-r-0"
-          >
+          <div key={index} className="border-r p-2 text-center last:border-r-0">
             <div className="font-semibold">{day}</div>
           </div>
         ))}
@@ -53,10 +63,13 @@ export function MonthViewCalendar({
 
       {/* Calendar grid */}
       <ScrollArea className="flex-1">
-        <div className="grid h-full grid-cols-7 grid-rows-6">          {displayDates.map((date, index) => {
+        <div className="grid h-full grid-cols-7 grid-rows-6">
+          {" "}
+          {displayDates.map((date, index) => {
             const dayClasses = getClassesForDate(date);
-            const isCurrentMonth = date.getMonth() === currentDate.getMonth() && 
-                                  date.getFullYear() === currentDate.getFullYear();
+            const isCurrentMonth =
+              date.getMonth() === currentDate.getMonth() &&
+              date.getFullYear() === currentDate.getFullYear();
 
             return (
               <div
@@ -66,9 +79,7 @@ export function MonthViewCalendar({
                 }`}
               >
                 {/* Date number */}
-                <div className="mb-1 text-right text-sm">
-                  {date.getDate()}
-                </div>
+                <div className="mb-1 text-right text-sm">{date.getDate()}</div>
 
                 {/* Classes */}
                 <div className="space-y-1">
@@ -122,4 +133,4 @@ export function MonthViewCalendar({
       </ScrollArea>
     </div>
   );
-} 
+}

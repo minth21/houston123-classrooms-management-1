@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FileText } from "lucide-react";
@@ -19,7 +25,10 @@ interface ClassroomDiaryProps {
   onDiarySubmit: (content: string, files: File[]) => Promise<void>;
 }
 
-export function ClassroomDiary({ diaryEntries, onDiarySubmit }: ClassroomDiaryProps) {
+export function ClassroomDiary({
+  diaryEntries,
+  onDiarySubmit,
+}: ClassroomDiaryProps) {
   const [diaryContent, setDiaryContent] = useState("");
   const [diaryFiles, setDiaryFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -92,10 +101,7 @@ export function ClassroomDiary({ diaryEntries, onDiarySubmit }: ClassroomDiaryPr
                   onChange={handleFileChange}
                 />
               </div>
-              <Button
-                onClick={handleDiarySubmit}
-                disabled={isSubmitting}
-              >
+              <Button onClick={handleDiarySubmit} disabled={isSubmitting}>
                 {isSubmitting ? "Đang gửi..." : "Gửi"}
               </Button>
             </div>
@@ -105,10 +111,7 @@ export function ClassroomDiary({ diaryEntries, onDiarySubmit }: ClassroomDiaryPr
 
       <div className="space-y-4">
         {diaryEntries.map((entry) => (
-          <div
-            key={entry.id}
-            className="rounded-lg border p-4"
-          >
+          <div key={entry.id} className="rounded-lg border p-4">
             <div className="flex items-center justify-between">
               <div className="font-medium">{entry.author}</div>
               <div className="text-sm text-muted-foreground">
@@ -133,4 +136,4 @@ export function ClassroomDiary({ diaryEntries, onDiarySubmit }: ClassroomDiaryPr
       </div>
     </div>
   );
-} 
+}

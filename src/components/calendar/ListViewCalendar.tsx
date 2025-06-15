@@ -11,13 +11,16 @@ interface ListViewCalendarProps {
 export function ListViewCalendar({
   scheduledClasses,
   onClassClick,
-}: ListViewCalendarProps) {  // Deduplicate classes first
+}: ListViewCalendarProps) {
   const uniqueClasses = scheduledClasses.filter((classItem, index, array) => {
-    return array.findIndex(c => 
-      c.classId === classItem.classId && 
-      c.startTime === classItem.startTime && 
-      c.endTime === classItem.endTime
-    ) === index;
+    return (
+      array.findIndex(
+        (c) =>
+          c.classId === classItem.classId &&
+          c.startTime === classItem.startTime &&
+          c.endTime === classItem.endTime
+      ) === index
+    );
   });
 
   // Sort classes by day and start time
@@ -81,4 +84,4 @@ export function ListViewCalendar({
       </ScrollArea>
     </div>
   );
-} 
+}

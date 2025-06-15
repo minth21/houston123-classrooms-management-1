@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       status: response.status,
       headers: Object.keys(response.headers),
       hasData: !!response.data,
-      data: response.data, // Add full data for debugging
+      data: response.data,
     });
 
     // Get the token from the response

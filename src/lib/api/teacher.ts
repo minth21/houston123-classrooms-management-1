@@ -40,7 +40,6 @@ export interface Teacher {
   permission?: string;
   shortPermissionName?: string;
   educationBackground?: string;
-  // Additional fields from API response
   userId?: string;
   userID?: string;
   directManager?: string | null;
