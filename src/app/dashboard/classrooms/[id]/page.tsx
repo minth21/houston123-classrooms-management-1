@@ -184,11 +184,12 @@ export default function ClassroomDetailPage() {
               attendance={attendance}
               onCommentSubmit={handleCommentSubmit}
             />
-          </TabsContent>
+          </TabsContent>{" "}
           <TabsContent value="diary">
             <ClassroomDiary
               diaryEntries={diaryEntries}
               onDiarySubmit={handleDiarySubmit}
+              classroom={currentClassData}
             />
           </TabsContent>{" "}
         </Tabs>

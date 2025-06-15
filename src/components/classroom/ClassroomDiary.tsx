@@ -9,8 +9,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FileText } from "lucide-react";
+import { FileText, Video } from "lucide-react";
 import { toast } from "sonner";
+import { RecordingModal } from "@/components/classroom/RecordingModal";
 
 interface DiaryEntry {
   id: string;
@@ -23,15 +24,23 @@ interface DiaryEntry {
 interface ClassroomDiaryProps {
   diaryEntries: DiaryEntry[];
   onDiarySubmit: (content: string, files: File[]) => Promise<void>;
+  classroom: {
+    classID: string;
+    subjectName: string;
+  } | null;
+  testMode?: boolean;
 }
 
 export function ClassroomDiary({
   diaryEntries,
   onDiarySubmit,
+  classroom,
+  testMode = false,
 }: ClassroomDiaryProps) {
   const [diaryContent, setDiaryContent] = useState("");
   const [diaryFiles, setDiaryFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRecordingModalOpen, setIsRecordingModalOpen] = useState(false);
 
   const handleDiarySubmit = async () => {
     if (!diaryContent.trim()) {
@@ -67,10 +76,9 @@ export function ClassroomDiary({
       day: "numeric",
     });
   };
-
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
         <Dialog>
           <DialogTrigger asChild>
             <Button>
@@ -100,15 +108,23 @@ export function ClassroomDiary({
                   multiple
                   onChange={handleFileChange}
                 />
-              </div>
+              </div>{" "}
               <Button onClick={handleDiarySubmit} disabled={isSubmitting}>
                 {isSubmitting ? "Đang gửi..." : "Gửi"}
               </Button>
+              {classroom && (
+                <Button
+                  className="ml-2 "
+                  onClick={() => setIsRecordingModalOpen(true)}
+                  variant="outline"
+                >
+                  Ghi hình
+                </Button>
+              )}
             </div>
           </DialogContent>
         </Dialog>
       </div>
-
       <div className="space-y-4">
         {diaryEntries.map((entry) => (
           <div key={entry.id} className="rounded-lg border p-4">
@@ -130,10 +146,20 @@ export function ClassroomDiary({
                   ))}
                 </ul>
               </div>
-            )}
+            )}{" "}
           </div>
         ))}
       </div>
+
+      {/* Recording Modal */}
+      {classroom && (
+        <RecordingModal
+          isOpen={isRecordingModalOpen}
+          onClose={() => setIsRecordingModalOpen(false)}
+          classCode={classroom.classID}
+          classroomName={`${classroom.subjectName}${testMode ? " (TEST)" : ""}`}
+        />
+      )}
     </div>
   );
 }

@@ -28,6 +28,7 @@ import {
   Mic,
   Settings,
   Download,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Toaster } from "sonner";
@@ -549,7 +550,7 @@ export function RecordingModal({
     try {
       const formData = new FormData();
       formData.append("content", content);
-      formData.append("file1", file); // Use numbered file naming pattern like the API expects      // Get company and branch from localStorage for headers
+      formData.append("file1", file);
       const selectedCompany = localStorage.getItem("selectedCompany");
       const selectedBranch = localStorage.getItem("selectedBranch");
       const cachedBranches = JSON.parse(
@@ -616,6 +617,32 @@ export function RecordingModal({
         error instanceof Error ? error.message : "Lỗi không xác định";
       toast.error(`Upload thất bại: ${errorMessage}`);
     }
+  };
+
+  // Validation function to check if required devices are selected
+  const isDeviceSelectionValid = (): boolean => {
+    // Check if microphone is selected (always required)
+    if (!settings.audioDeviceId) {
+      return false;
+    }
+
+    // Check if camera is selected when source is camera
+    if (settings.source === "camera" && !settings.videoDeviceId) {
+      return false;
+    }
+
+    return true;
+  };
+
+  // Show validation error message
+  const getValidationMessage = (): string => {
+    if (!settings.audioDeviceId) {
+      return "Vui lòng chọn microphone";
+    }
+    if (settings.source === "camera" && !settings.videoDeviceId) {
+      return "Vui lòng chọn camera";
+    }
+    return "";
   };
 
   return (
@@ -695,21 +722,43 @@ export function RecordingModal({
                       <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
                       <span className="hidden sm:inline">Cài đặt</span>
                       <span className="sm:hidden">Settings</span>
-                    </TabsTrigger>
-                    <TabsTrigger
+                    </TabsTrigger>                    <TabsTrigger
                       value="preview"
+                      disabled={!isDeviceSelectionValid()}
                       className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium h-8 sm:h-10"
+                      onClick={(e) => {
+                        if (!isDeviceSelectionValid()) {
+                          e.preventDefault();
+                          toast.error(getValidationMessage());
+                        }
+                      }}
                     >
-                      <Monitor className="h-3 w-3 sm:h-4 sm:w-4" />
+                      {!isDeviceSelectionValid() ? (
+                        <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-orange-500" />
+                      ) : (
+                        <Monitor className="h-3 w-3 sm:h-4 sm:w-4" />
+                      )}
                       <span className="hidden sm:inline">Preview</span>
                       <span className="sm:hidden">Preview</span>
-                    </TabsTrigger>{" "}
-                    <TabsTrigger
+                    </TabsTrigger>{" "}                    <TabsTrigger
                       value="recording"
-                      disabled={!hasPermission}
+                      disabled={!hasPermission || !isDeviceSelectionValid()}
                       className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium h-8 sm:h-10"
+                      onClick={(e) => {
+                        if (!hasPermission) {
+                          e.preventDefault();
+                          toast.error("Không có quyền truy cập thiết bị");
+                        } else if (!isDeviceSelectionValid()) {
+                          e.preventDefault();
+                          toast.error(getValidationMessage());
+                        }
+                      }}
                     >
-                      <Video className="h-3 w-3 sm:h-4 sm:w-4" />
+                      {!hasPermission || !isDeviceSelectionValid() ? (
+                        <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-orange-500" />
+                      ) : (
+                        <Video className="h-3 w-3 sm:h-4 sm:w-4" />
+                      )}
                       <span className="hidden sm:inline">Ghi hình</span>
                       <span className="sm:hidden">Record</span>
                     </TabsTrigger>
@@ -1007,11 +1056,22 @@ export function RecordingModal({
                           </div>
                         </div>
                       </Card>
-                    </div>
-
-                    <div className="flex justify-end pt-4 border-t">
+                    </div>{" "}
+                    <div className="flex flex-col gap-3 pt-4 border-t">
+                      {!isDeviceSelectionValid() && (
+                        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+                          ⚠️ {getValidationMessage()}
+                        </div>
+                      )}
                       <Button
-                        onClick={() => setCurrentTab("preview")}
+                        onClick={() => {
+                          if (isDeviceSelectionValid()) {
+                            setCurrentTab("preview");
+                          } else {
+                            toast.error(getValidationMessage());
+                          }
+                        }}
+                        disabled={!isDeviceSelectionValid()}
                         size="lg"
                         className="px-8"
                       >
@@ -1120,8 +1180,23 @@ export function RecordingModal({
                                 </p>
                               )}
                             </div>
-                          )}
+                          )}{" "}
                         </div>
+
+                        {/* Validation Warning */}
+                        {!isDeviceSelectionValid() && (
+                          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <div className="flex items-center gap-2 text-red-600">
+                              <span className="text-lg">⚠️</span>
+                              <span className="font-medium">
+                                {getValidationMessage()}
+                              </span>
+                            </div>
+                            <p className="text-sm text-red-600 mt-1">
+                              Quay lại cài đặt để chọn thiết bị cần thiết.
+                            </p>
+                          </div>
+                        )}
 
                         {/* Action Buttons */}
                         <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-6 border-t">
@@ -1135,8 +1210,16 @@ export function RecordingModal({
                             Quay lại cài đặt
                           </Button>{" "}
                           <Button
-                            onClick={() => setCurrentTab("recording")}
-                            disabled={!hasPermission}
+                            onClick={() => {
+                              if (isDeviceSelectionValid()) {
+                                setCurrentTab("recording");
+                              } else {
+                                toast.error(getValidationMessage());
+                              }
+                            }}
+                            disabled={
+                              !hasPermission || !isDeviceSelectionValid()
+                            }
                             className="flex-1"
                             size="lg"
                           >
