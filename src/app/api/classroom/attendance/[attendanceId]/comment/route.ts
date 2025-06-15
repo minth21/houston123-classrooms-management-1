@@ -25,14 +25,6 @@ export async function POST(
     // Get the form data from the request
     const formData = await request.formData();
 
-    console.log("Form data received:", {
-      attendanceId,
-      hasComment: formData.has("comment"),
-      fileCount: Array.from(formData.keys()).filter((key) =>
-        key.startsWith("file")
-      ).length,
-    });
-
     // Forward the request to the ERP API
     const response = await axios.post(
       `${ERP_API_URL}/api/classroom/attendance/${attendanceId}/comment`,
@@ -45,11 +37,6 @@ export async function POST(
         validateStatus: (status) => status >= 200 && status < 500,
       }
     );
-
-    console.log("ERP API Response:", {
-      status: response.status,
-      hasData: !!response.data,
-    });
 
     if (response.status === 200 || response.status === 201) {
       return NextResponse.json(response.data, { status: response.status });

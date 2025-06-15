@@ -37,11 +37,6 @@ export async function GET(
       validateStatus: (status) => status >= 200 && status < 500,
     });
 
-    console.log("ERP API Response:", {
-      status: response.status,
-      hasData: !!response.data
-    });
-
     if (response.status === 200) {
       return NextResponse.json(response.data, { status: 200 });
     } else {

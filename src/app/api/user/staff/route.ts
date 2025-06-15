@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log("Fetching staff list from ERP API..."); // Get additional headers from the request
+    console.log("Fetching staff list from ERP API..."); 
     const xCompany = request.headers.get("x-company");
     const xBranch = request.headers.get("x-branch");
 
@@ -35,11 +35,6 @@ export async function GET(request: NextRequest) {
         ...(xBranch && { "x-branch": xBranch }),
       },
       validateStatus: (status) => status >= 200 && status < 500,
-    });
-
-    console.log("ERP API Response:", {
-      status: response.status,
-      hasData: !!response.data,
     });
 
     if (response.status === 200) {

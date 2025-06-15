@@ -21,13 +21,11 @@ export async function GET(request: NextRequest) {
     // Get query parameters from the request
     const { searchParams } = new URL(request.url);
     const queryString = searchParams.toString();
-    console.log("Query parameters:", queryString);
 
     // Forward the request to the ERP API with query parameters
     const url = `${ERP_API_URL}/api/classroom${
       queryString ? `?${queryString}` : ""
     }`;
-    console.log("ERP URL:", url);
 
     const response = await axios.get(url, {
       headers: {
@@ -37,12 +35,6 @@ export async function GET(request: NextRequest) {
         ...(xBranch && { "x-branch": xBranch }),
       },
       validateStatus: (status) => status >= 200 && status < 500,
-    });
-
-    console.log("ERP API Response:", {
-      status: response.status,
-      hasData: !!response.data,
-      responseData: response.data,
     });
 
     if (response.status === 200) {
