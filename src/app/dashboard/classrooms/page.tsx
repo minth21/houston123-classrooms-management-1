@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ import {
 } from "lucide-react";
 
 export default function ClassroomsPage() {
+  const { t, i18n} = useTranslation();
   const router = useRouter();
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [filteredClassrooms, setFilteredClassrooms] = useState<Classroom[]>([]);
@@ -61,9 +63,9 @@ export default function ClassroomsPage() {
       }
     } catch (err: any) {
       if (err.message === "Please select a company and branch first") {
-        setError("Please select a company and branch first");
+        setError(t("classroomsPage.errors.selectCompanyAndBranch"));
       } else {
-        setError("Failed to load classrooms. Please try again.");
+        setError(t("classroomsPage.errors.loadFailed"));
         console.error("Error loading classrooms:", err);
       }
     } finally {
@@ -197,14 +199,14 @@ export default function ClassroomsPage() {
       return (
         <div className="py-12 text-center">
           <h3 className="text-xl font-semibold mb-2">
-            Vui lòng chọn công ty và chi nhánh
+             {t("classroomsPage.selectionPrompt.title")}
           </h3>
           <p className="text-gray-500 mb-4">
-            Bạn cần chọn công ty và chi nhánh trước khi xem danh sách lớp học
+            {t("classroomsPage.selectionPrompt.description")}
           </p>
           <div className="bg-yellow-50 p-4 rounded-lg inline-block">
             <p className="text-yellow-600">
-              Sử dụng menu thả xuống ở phía trên để chọn
+             {t("classroomsPage.selectionPrompt.instruction")}
             </p>
           </div>
         </div>
@@ -223,7 +225,7 @@ export default function ClassroomsPage() {
       return (
         <div className="py-8 text-center">
           <p className="text-gray-500">
-            Không tìm thấy lớp học nào với bộ lọc hiện tại.
+            {t("classroomsPage.emptyState.noResults")}
           </p>
         </div>
       );
@@ -234,17 +236,17 @@ export default function ClassroomsPage() {
         <TableHeader>
           {" "}
           <TableRow>
-            <TableHead>Mã lớp</TableHead>
-            <TableHead>Tên môn học</TableHead>
-            <TableHead>Giáo viên</TableHead>
-            <TableHead>Ngày bắt đầu</TableHead>
-            <TableHead>Ngày kết thúc</TableHead>
-            <TableHead>Tình trạng</TableHead>
-            <TableHead className="text-right">Hành động</TableHead>
+              <TableHead>{t("classroomsPage.tableHeaders.classId")}</TableHead>
+            <TableHead>{t("classroomsPage.tableHeaders.subject")}</TableHead>
+            <TableHead>{t("classroomsPage.tableHeaders.teacher")}</TableHead>
+            <TableHead>{t("classroomsPage.tableHeaders.startDate")}</TableHead>
+            <TableHead>{t("classroomsPage.tableHeaders.endDate")}</TableHead>
+            <TableHead>{t("classroomsPage.tableHeaders.status")}</TableHead>
+            <TableHead className="text-right">{t("classroomsPage.tableHeaders.actions")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredClassrooms.map((classroom) => (
+              {filteredClassrooms.map((classroom) => (
             <TableRow key={classroom.classID} suppressHydrationWarning>
               {" "}
               <TableCell className="font-medium">
@@ -256,25 +258,28 @@ export default function ClassroomsPage() {
                 {classroom.startDate ? (
                   <div className="flex items-center">
                     <Calendar className="mr-1 h-4 w-4 text-blue-500" />
-                    {new Date(classroom.startDate).toLocaleDateString("vi-VN")}
+                    {/* Giả sử bạn có i18n từ useTranslation() để định dạng ngày tự động */}
+                    {new Date(classroom.startDate).toLocaleDateString(i18n.language)}
                   </div>
                 ) : (
-                  <span className="text-gray-400">Chưa cập nhật</span>
+                  <span className="text-gray-400">{t("common.notUpdated")}</span>
                 )}
               </TableCell>
               <TableCell>
                 {classroom.finishDate ? (
                   <div className="flex items-center">
                     <Calendar className="mr-1 h-4 w-4 text-red-500" />
-                    {new Date(classroom.finishDate).toLocaleDateString("vi-VN")}
+                    {new Date(classroom.finishDate).toLocaleDateString(i18n.language)}
                   </div>
                 ) : (
-                  <span className="text-gray-400">Chưa cập nhật</span>
+                  <span className="text-gray-400">{t("common.notUpdated")}</span>
                 )}
               </TableCell>
               <TableCell>
                 <Badge variant={classroom.isActive ? "default" : "secondary"}>
-                  {classroom.isActive ? "Đang hoạt động" : "Không hoạt động"}
+                  {classroom.isActive 
+                    ? t("classroomsPage.status.active") 
+                    : t("classroomsPage.status.inactive")}
                 </Badge>
               </TableCell>{" "}
               <TableCell className="text-right">
@@ -285,7 +290,7 @@ export default function ClassroomsPage() {
                   onClick={() => handleViewClassroom(classroom.classID)}
                 >
                   <Clock className="h-4 w-4 mr-1" />
-                  Lịch học
+                  {t("classroomsPage.actions.viewSchedule")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -305,19 +310,19 @@ export default function ClassroomsPage() {
   return (
     <div className="space-y-6">
       <DashboardHeader
-        title="Classrooms"
-        description="Xem và quản lý tất cả lớp học của bạn"
+        title={t("classroomsPage.header.title")}
+        description={t("classroomsPage.header.description")}
       />
       {/* Tabs and Search */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle>Danh sách lớp học</CardTitle>
+            <CardTitle></CardTitle>
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
               <Input
                 type="search"
-                placeholder="Tìm kiếm lớp học..."
+                placeholder={t("classroomsPage.searchPlaceholder")}
                 className="pl-8 w-full sm:w-[260px]"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
@@ -336,13 +341,13 @@ export default function ClassroomsPage() {
             >
               {" "}
               <TabsList className="mb-4">
-                <TabsTrigger value="all">Tất cả lớp</TabsTrigger>
-                <TabsTrigger value="today">Lớp học hôm nay</TabsTrigger>
-                <TabsTrigger value="upcoming">Sắp tới</TabsTrigger>
-                <TabsTrigger value="monday">Thứ 2</TabsTrigger>
-                <TabsTrigger value="wednesday">Thứ 4</TabsTrigger>
-                <TabsTrigger value="friday">Thứ 6</TabsTrigger>
-                <TabsTrigger value="weekend">Cuối tuần</TabsTrigger>
+                <TabsTrigger value="all">{t("classroomsPage.filters.all")}</TabsTrigger>
+                <TabsTrigger value="today">{t("classroomsPage.filters.today")}</TabsTrigger>
+                <TabsTrigger value="upcoming">{t("classroomsPage.filters.upcoming")}</TabsTrigger>
+                <TabsTrigger value="monday">{t("classroomsPage.filters.monday")}</TabsTrigger>
+                <TabsTrigger value="wednesday">{t("classroomsPage.filters.wednesday")}</TabsTrigger>
+                <TabsTrigger value="friday">{t("classroomsPage.filters.friday")}</TabsTrigger>
+                <TabsTrigger value="weekend">{t("classroomsPage.filters.weekend")}</TabsTrigger>
               </TabsList>{" "}
               <TabsContent value="all" className="space-y-4">
                 {renderContent()}
@@ -376,7 +381,8 @@ export default function ClassroomsPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <Calendar className="mr-2 h-5 w-5 text-blue-500" />
-              Lịch học lớp {selectedClassroom?.classID}
+              {/* highlight-next-line */}
+              {t("classroomsPage.dialog.title", { classId: selectedClassroom?.classID })}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -384,97 +390,108 @@ export default function ClassroomsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <h3 className="text-sm font-medium text-gray-500">
-                  Tên môn học
+                  {/* highlight-next-line */}
+                  {t("classroomsPage.tableHeaders.subject")}
                 </h3>
                 <p className="text-base">{selectedClassroom?.subjectName}</p>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Giáo viên</h3>
+                <h3 className="text-sm font-medium text-gray-500">
+                  {/* highlight-next-line */}
+                  {t("classroomsPage.tableHeaders.teacher")}
+                </h3>
                 <p className="text-base">{selectedClassroom?.teacherName}</p>
               </div>
               <div>
                 <h3 className="text-sm font-medium text-gray-500">
-                  Ngày bắt đầu
+                  {/* highlight-next-line */}
+                  {t("classroomsPage.tableHeaders.startDate")}
                 </h3>
                 <p className="text-base flex items-center">
                   <Calendar className="mr-1 h-4 w-4 text-blue-500" />
                   {selectedClassroom?.startDate
-                    ? new Date(selectedClassroom.startDate).toLocaleDateString(
-                        "vi-VN"
-                      )
-                    : "Chưa cập nhật"}
+                    // highlight-start
+                    ? new Date(selectedClassroom.startDate).toLocaleDateString(i18n.language)
+                    : t("common.notUpdated")
+                    // highlight-end
+                  }
                 </p>
               </div>
               <div>
                 <h3 className="text-sm font-medium text-gray-500">
-                  Ngày kết thúc
+                  {/* highlight-next-line */}
+                  {t("classroomsPage.tableHeaders.endDate")}
                 </h3>
                 <p className="text-base flex items-center">
                   <Calendar className="mr-1 h-4 w-4 text-red-500" />
                   {selectedClassroom?.finishDate
-                    ? new Date(selectedClassroom.finishDate).toLocaleDateString(
-                        "vi-VN"
-                      )
-                    : "Chưa cập nhật"}
+                    // highlight-start
+                    ? new Date(selectedClassroom.finishDate).toLocaleDateString(i18n.language)
+                    : t("common.notUpdated")
+                    // highlight-end
+                  }
                 </p>
               </div>
             </div>{" "}
-            {/* Study time table */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center justify-between">
-                <span className="flex items-center">
-                  <Clock className="mr-1 h-4 w-4" />
-                  Lịch học trong tuần
-                </span>
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="p-0 h-auto"
-                  onClick={() => {
-                    setIsTimeDialogOpen(false);
-                    router.push("/dashboard/class-schedule");
-                  }}
-                >
-                  Xem tất cả lịch học
-                </Button>
-              </h3>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Ngày</TableHead>
-                    <TableHead>Bắt đầu</TableHead>
-                    <TableHead>Kết thúc</TableHead>
-                    <TableHead>Phòng</TableHead>
-                  </TableRow>
-                </TableHeader>
-              </Table>
-            </div>
-            {/* Student attendance */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center">
-                <Users className="mr-1 h-4 w-4" />
-                Sĩ số: {selectedClassroom?.member?.length || 0} học viên
-              </h3>
-            </div>
-            <div className="flex justify-end">
+    {/* Study time table */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center justify-between">
+              <span className="flex items-center">
+                <Clock className="mr-1 h-4 w-4" />
+                {t("classroomsPage.dialog.scheduleTitle")}
+              </span>
               <Button
-                onClick={() =>
-                  handleViewFullDetails(selectedClassroom?.classID || "")
-                }
-                className="mr-2"
+                variant="link"
+                size="sm"
+                className="p-0 h-auto"
+                onClick={() => {
+                  setIsTimeDialogOpen(false);
+                  router.push("/dashboard/class-schedule");
+                }}
               >
-                Xem chi tiết lớp học
+                {t("classroomsPage.dialog.viewAllSchedulesButton")}
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => setIsTimeDialogOpen(false)}
-              >
-                Đóng
-              </Button>
-            </div>
+            </h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("classroomsPage.dialog.tableHeaders.day")}</TableHead>
+                  <TableHead>{t("classroomsPage.dialog.tableHeaders.start")}</TableHead>
+                  <TableHead>{t("classroomsPage.dialog.tableHeaders.end")}</TableHead>
+                  <TableHead>{t("classroomsPage.dialog.tableHeaders.room")}</TableHead>
+                </TableRow>
+              </TableHeader>
+            </Table>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
+            {/* Student attendance */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center">
+              <Users className="mr-1 h-4 w-4" />
+              {/* highlight-next-line */}
+              {t("classroomsPage.dialog.studentCount", { count: selectedClassroom?.member?.length || 0 })}
+            </h3>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              onClick={() =>
+                handleViewFullDetails(selectedClassroom?.classID || "")
+              }
+              className="mr-2"
+            >
+              {/* highlight-next-line */}
+              {t("classroomsPage.actions.details")}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setIsTimeDialogOpen(false)}
+            >
+              {/* highlight-next-line */}
+              {t("common.close")}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  </div>
+);
 }

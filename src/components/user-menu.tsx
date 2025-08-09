@@ -11,11 +11,14 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/context/auth-context";
 import { User, LogOut, Settings } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
-export default function UserMenu() {  const { logout } = useAuth();
+export default function UserMenu() {  
+  const { logout } = useAuth();
+const { t } = useTranslation();
 
   const user = {
-    name: "Giáo viên",
+    name: t('userMenu.role'),
     initials: "GV",
     email: "user@houston123.edu.vn",
   };
@@ -41,11 +44,11 @@ export default function UserMenu() {  const { logout } = useAuth();
         <DropdownMenuSeparator />
         <DropdownMenuItem className="cursor-pointer">
           <User className="mr-2 h-4 w-4" />
-          <span>Profile</span>
-        </DropdownMenuItem>
+ <span>{t('userMenu.profile')}</span>
+         </DropdownMenuItem>
         <DropdownMenuItem className="cursor-pointer">
           <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
+           <span>{t('userMenu.settings')}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
@@ -53,7 +56,7 @@ export default function UserMenu() {  const { logout } = useAuth();
           onClick={logout}
         >
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+          <span>{t('userMenu.logout')}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

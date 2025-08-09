@@ -19,8 +19,10 @@ import DashboardHeader from "@/components/dashboard-header";
 import Loader from "@/components/loader";
 import { Search, Mail, Phone, School } from "lucide-react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 
 export default function TeachersPage() {
+  const {t} = useTranslation();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [filteredTeachers, setFilteredTeachers] = useState<Teacher[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,22 +46,22 @@ export default function TeachersPage() {
         console.log(`Loaded ${teachersList.length} teachers`);
       } else {
         console.error("Invalid data format received");
-        setError("Dữ liệu không hợp lệ");
+        setError(t("teachersPage.errors.invalidData"));
       }
     } catch (err: any) {
       console.error("Error loading teachers:", err);
       if (err.message === "Please select a company and branch first") {
-        setError("Vui lòng chọn công ty và chi nhánh trước");
+        setError(t("teachersPage.errors.selectCompanyAndBranch"));
       } else if (err.message === "Please select a company first") {
-        setError("Vui lòng chọn công ty trước");
+        setError(t("teachersPage.errors.selectCompany"));
       } else if (err.message === "Please select a branch first") {
-        setError("Vui lòng chọn chi nhánh trước");
+        setError(t("teachersPage.errors.selectBranch"));
       } else if (err.message === "No branches found for the selected company") {
-        setError("Không tìm thấy chi nhánh nào cho công ty đã chọn");
+        setError(t("teachersPage.errors.noBranchFound"));
       } else if (err.message === "Invalid branch selected") {
-        setError("Chi nhánh đã chọn không hợp lệ");
+        setError(t("teachersPage.errors.invalidBranch"));
       } else {
-        setError("Không thể tải danh sách giáo viên: " + err.message);
+        setError(t("teachersPage.errors.loadFailed", { message: err.message }));
       }
     } finally {
       setIsLoading(false);
@@ -150,14 +152,14 @@ export default function TeachersPage() {
       return (
         <div className="py-12 text-center">
           <h3 className="text-xl font-semibold mb-2">
-            Vui lòng chọn công ty và chi nhánh
+             {t("teachersPage.selectionPrompt.title")}
           </h3>
           <p className="text-gray-500 mb-4">
-            Bạn cần chọn công ty và chi nhánh trước khi xem danh sách giáo viên
+            {t("teachersPage.selectionPrompt.description")}
           </p>
           <div className="bg-yellow-50 p-4 rounded-lg inline-block">
             <p className="text-yellow-600">
-              Sử dụng menu thả xuống ở phía trên để chọn
+              {t("teachersPage.selectionPrompt.instruction")}
             </p>
           </div>
         </div>
@@ -174,7 +176,7 @@ export default function TeachersPage() {
     if (teachers.length == 0) {
       return (
         <div className="py-8 text-center">
-          <p className="text-gray-500">Chưa có giáo viên nào trong hệ thống.</p>
+          <p className="text-gray-500">{t("teachersPage.emptyState.noTeachers")}</p>
         </div>
       );
     }
@@ -182,9 +184,8 @@ export default function TeachersPage() {
     if (filteredTeachers.length === 0 && searchQuery) {
       return (
         <div className="py-8 text-center">
-          <p className="text-gray-500">
-            Không tìm thấy giáo viên nào phù hợp với từ khóa "{searchQuery}"
-          </p>
+      <p className="text-gray-500">{t("teachersPage.emptyState.noSearchResults", { query: searchQuery })}</p>
+
         </div>
       );
     }
@@ -193,13 +194,13 @@ export default function TeachersPage() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Giáo viên</TableHead>
-            <TableHead>Mã GV</TableHead>
-            <TableHead>Chức vụ</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Số điện thoại</TableHead>
-            <TableHead>Chi nhánh</TableHead>
-            <TableHead className="text-right">Thao tác</TableHead>
+            <TableHead>{t("teachersPage.tableHeaders.teacher")}</TableHead>
+            <TableHead>{t("teachersPage.tableHeaders.Id")}</TableHead>
+            <TableHead>{t("teachersPage.tableHeaders.position")}</TableHead>
+            <TableHead>{t("teachersPage.tableHeaders.email")}</TableHead>
+            <TableHead>{t("teachersPage.tableHeaders.phone")}</TableHead>
+            <TableHead>{t("teachersPage.tableHeaders.branch")}</TableHead>
+            <TableHead className="text-right">{t("teachersPage.tableHeaders.actions")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -220,9 +221,7 @@ export default function TeachersPage() {
               <TableCell>{teacher.staffId}</TableCell>
               <TableCell>
                 <Badge variant="outline">
-                  {teacher.shortPermissionName ||
-                    teacher.permission ||
-                    "Teacher"}
+           {teacher.shortPermissionName || teacher.permission || t("teachersPage.defaultPosition")}
                 </Badge>
               </TableCell>
               <TableCell>
@@ -235,7 +234,7 @@ export default function TeachersPage() {
                     {teacher.email}
                   </Link>
                 ) : (
-                  "N/A"
+                  t("common.notAvailable")
                 )}
               </TableCell>
               <TableCell>
@@ -248,7 +247,7 @@ export default function TeachersPage() {
                     {teacher.phoneNumber}
                   </Link>
                 ) : (
-                  "N/A"
+                    t("common.notAvailable")
                 )}
               </TableCell>
               <TableCell>
@@ -263,7 +262,7 @@ export default function TeachersPage() {
                   size="sm"
                   onClick={() => handleViewTeacher(teacher.staffId)}
                 >
-                  Chi tiết
+                  {t("teachersPage.actions.details")}
                 </Button>
               </TableCell>
             </TableRow>
@@ -276,20 +275,20 @@ export default function TeachersPage() {
   return (
     <div className="space-y-6">
       <DashboardHeader
-        title="Giáo viên"
-        description="Quản lý danh sách giáo viên của trung tâm"
+        title={t("teachersPage.header.title")}
+        description={t("teachersPage.header.description")}
       />
 
       {/* Search */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle>Danh sách giáo viên</CardTitle>
+            <CardTitle></CardTitle>
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
               <Input
                 type="search"
-                placeholder="Tìm kiếm giáo viên..."
+                placeholder={t("teachersPage.searchPlaceholder")}
                 className="pl-8 w-full sm:w-[300px]"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}

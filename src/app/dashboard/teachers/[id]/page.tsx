@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { teacherService, Teacher } from "@/lib/api/teacher";
 import DashboardHeader from "@/components/dashboard-header";
 import Loader from "@/components/loader";
+import { useTranslation } from "react-i18next";
 import {
   Clock,
   GraduationCap,
@@ -22,12 +23,17 @@ import {
 } from "lucide-react";
 
 export default function TeacherDetailPage() {
+   const { t } = useTranslation()
   const params = useParams();
   const teacherId = params.id as string;
 
   const [teacher, setTeacher] = useState<Teacher | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+// --- Lấy dữ liệu từ file JSON ---
+const daysOfWeekData = t("classScheduleCalendar.daysOfWeek", { returnObjects: true });
+const DAYS_OF_WEEK: string[] = Array.isArray(daysOfWeekData) ? daysOfWeekData : [];
 
   // Fetch teacher data
   const fetchTeacherData = async () => {
@@ -38,14 +44,11 @@ export default function TeacherDetailPage() {
       if (data) {
         setTeacher(data);
       } else {
-        setError("Không tìm thấy thông tin giáo viên");
+        setError(t("teacherDetailPage.errors.notFound"));
       }
     } catch (err: any) {
       console.error("Error fetching teacher:", err);
-      setError(
-        err.message ||
-          "Có lỗi xảy ra khi tải thông tin giáo viên. Vui lòng thử lại."
-      );
+      setError(err.message || t("teacherDetailPage.errors.loadFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +85,7 @@ export default function TeacherDetailPage() {
   if (error || !teacher) {
     return (
       <div className="rounded-md bg-red-50 p-4 text-sm text-red-500">
-        {error || "Không tìm thấy thông tin giáo viên"}
+        {error || t("teacherDetailPage.errors.notFound")}
       </div>
     );
   }
@@ -95,13 +98,13 @@ export default function TeacherDetailPage() {
           className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
-          Quay lại danh sách giáo viên
+          {t("teacherDetailPage.backToList")}
         </Link>
       </div>
 
       <DashboardHeader
         title={teacher.name}
-        description={`Mã GV: ${teacher.staffId}`}
+        description={t("teacherDetailPage.staffIdLabel", { staffId: teacher.staffId })}
       />
 
       {/* Basic Info Card */}
@@ -123,11 +126,9 @@ export default function TeacherDetailPage() {
                     <Building2 className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Chức vụ</p>
+                    <p className="text-sm font-medium">{t("teacherDetailPage.basicInfo.position")}</p>
                     <p className="text-sm text-gray-500">
-                      {teacher.positionName ||
-                        teacher.shortPermissionName ||
-                        "Teacher"}
+                    {teacher.positionName || teacher.shortPermissionName || t("teacherDetailPage.basicInfo.defaultPosition")}
                     </p>
                   </div>
                 </div>
@@ -137,9 +138,9 @@ export default function TeacherDetailPage() {
                     <GraduationCap className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Trình độ học vấn</p>
+                    <p className="text-sm font-medium">{t("teacherDetailPage.basicInfo.education")}</p>
                     <p className="text-sm text-gray-500">
-                      {teacher.educationBackground || "Chưa cập nhật"}
+                      {teacher.educationBackground || t("common.notUpdated")}
                     </p>
                   </div>
                 </div>
@@ -149,9 +150,9 @@ export default function TeacherDetailPage() {
                     <School className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Chi nhánh</p>
+                    <p className="text-sm font-medium">{t("teacherDetailPage.basicInfo.branch")}</p>
                     <p className="text-sm text-gray-500">
-                      {teacher.branch?.join(", ") || "Chưa cập nhật"}
+                      {teacher.branch?.join(", ") || t("common.notUpdated")}
                     </p>
                   </div>
                 </div>
@@ -190,18 +191,18 @@ export default function TeacherDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Tabs for Schedule and Other Info */}
+        {/* Tabs for Schedule and Other Info */}
       <Tabs defaultValue="schedule" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="schedule">Lịch dạy</TabsTrigger>
-          <TabsTrigger value="info">Thông tin thêm</TabsTrigger>
+          <TabsTrigger value="schedule">{t("teacherDetailPage.tabs.schedule")}</TabsTrigger>
+          <TabsTrigger value="info">{t("teacherDetailPage.tabs.moreInfo")}</TabsTrigger>
         </TabsList>
-
+       
         {/* Schedule Tab */}
         <TabsContent value="schedule" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Lịch dạy trong tuần</CardTitle>
+              <CardTitle>{t("teacherDetailPage.schedule.title")}</CardTitle>
             </CardHeader>
             <CardContent>
               {teacher.schedule && teacher.schedule.length > 0 ? (
@@ -218,9 +219,7 @@ export default function TeacherDetailPage() {
                         <div>
                           <p className="font-medium">{slot.classId}</p>
                           <p className="text-sm text-gray-500">
-                            {`Thứ ${slot.day + 1}, ${slot.startTime} - ${
-                              slot.endTime
-                            }`}
+                            {`${DAYS_OF_WEEK[slot.day]}, ${slot.startTime} - ${slot.endTime}`}
                           </p>
                         </div>
                       </div>
@@ -230,7 +229,7 @@ export default function TeacherDetailPage() {
                 </div>
               ) : (
                 <div className="text-center py-6 text-gray-500">
-                  Chưa có lịch dạy
+                  {t("teacherDetailPage.schedule.noSchedule")}
                 </div>
               )}
             </CardContent>
@@ -241,24 +240,20 @@ export default function TeacherDetailPage() {
         <TabsContent value="info" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Thông tin chi tiết</CardTitle>
+              <CardTitle>{t("teacherDetailPage.moreInfo.title")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {teacher.personalId && (
                     <div>
-                      <p className="text-sm font-medium text-gray-500">
-                        CMND/CCCD
-                      </p>
+                      <p className="text-sm font-medium text-gray-500">{t("teacherDetailPage.moreInfo.personalId")}</p>
                       <p>{teacher.personalId}</p>
                     </div>
                   )}
                   {teacher.birthday && (
                     <div>
-                      <p className="text-sm font-medium text-gray-500">
-                        Ngày sinh
-                      </p>
+                      <p className="text-sm font-medium text-gray-500">{t("teacherDetailPage.moreInfo.birthday")}</p>
                       <p>{formatDate(teacher.birthday)}</p>
                     </div>
                   )}
@@ -266,31 +261,27 @@ export default function TeacherDetailPage() {
 
                 {teacher.baseSalary && (
                   <div className="border-t pt-4">
-                    <p className="text-sm font-medium text-gray-500 mb-2">
-                      Thông tin lương
-                    </p>
+                    <p className="text-sm font-medium text-gray-500 mb-2">{t("teacherDetailPage.moreInfo.salaryInfo")}</p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <p className="text-xs text-gray-500">Lương theo giờ</p>
+                        <p className="text-xs text-gray-500">{t("teacherDetailPage.moreInfo.hourlyRate")}</p>
                         <p className="font-medium">
-                          {teacher.baseSalary.hour.toLocaleString("vi-VN")} VNĐ
+                          {t("teacherDetailPage.moreInfo.salaryFormat", { value: teacher.baseSalary.hour.toLocaleString("vi-VN") })}
                         </p>
                       </div>
                       {teacher.baseSalary.shift > 0 && (
                         <div>
-                          <p className="text-xs text-gray-500">Lương ca</p>
+                          <p className="text-xs text-gray-500">{t("teacherDetailPage.moreInfo.shiftRate")}</p>
                           <p className="font-medium">
-                            {teacher.baseSalary.shift.toLocaleString("vi-VN")}{" "}
-                            VNĐ
+                            {t("teacherDetailPage.moreInfo.salaryFormat", { value: teacher.baseSalary.shift.toLocaleString("vi-VN") })}
                           </p>
                         </div>
                       )}
                       {teacher.baseSalary.month > 0 && (
                         <div>
-                          <p className="text-xs text-gray-500">Lương tháng</p>
+                          <p className="text-xs text-gray-500">{t("teacherDetailPage.moreInfo.monthlyRate")}</p>
                           <p className="font-medium">
-                            {teacher.baseSalary.month.toLocaleString("vi-VN")}{" "}
-                            VNĐ
+                            {t("teacherDetailPage.moreInfo.salaryFormat", { value: teacher.baseSalary.month.toLocaleString("vi-VN") })}
                           </p>
                         </div>
                       )}

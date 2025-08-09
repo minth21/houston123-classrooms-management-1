@@ -14,18 +14,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RecordingSettings } from "@/lib/api/classroom";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
+// --- Props Interface and Constants that don't depend on hooks ---
 interface RecordingSettingsDialogProps {
   settings?: RecordingSettings;
   onSave: (settings: RecordingSettings) => void;
 }
-
-const resolutionOptions = [
-  { label: "Full HD (1920x1080)", value: "1920x1080" },
-  { label: "HD (1280x720)", value: "1280x720" },
-  { label: "SD (854x480)", value: "854x480" },
-  { label: "Low (640x360)", value: "640x360" },
-];
 
 const fpsOptions = [
   { label: "60 FPS", value: "60" },
@@ -52,11 +47,22 @@ const defaultSettings: RecordingSettings = {
   },
 };
 
+// --- Component Function ---
 export function RecordingSettingsDialog({ settings, onSave }: RecordingSettingsDialogProps) {
+  // 1. Call hooks *inside* the component function.
+  const { t } = useTranslation();
   const [currentSettings, setCurrentSettings] = useState<RecordingSettings>(
     settings || defaultSettings
   );
   const [isOpen, setIsOpen] = useState(false);
+
+  // 2. Define constants that depend on hooks *inside* the component.
+  const resolutionOptions = [
+    { label: t('settings_dialog.options.resolutions.full_hd'), value: "1920x1080" },
+    { label: t('settings_dialog.options.resolutions.hd'), value: "1280x720" },
+    { label: t('settings_dialog.options.resolutions.sd'), value: "854x480" },
+    { label: t('settings_dialog.options.resolutions.low'), value: "640x360" },
+  ];
 
   const handleSave = () => {
     onSave(currentSettings);
@@ -66,18 +72,17 @@ export function RecordingSettingsDialog({ settings, onSave }: RecordingSettingsD
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Cấu hình ghi hình</Button>
+        <Button variant="outline">{t('settings_dialog.trigger_button')}</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Cấu hình ghi hình</DialogTitle>
-          <DialogDescription>
-            Điều chỉnh các thông số chất lượng video và âm thanh cho buổi học
-          </DialogDescription>
+          <DialogTitle>{t('settings_dialog.title')}</DialogTitle>
+          <DialogDescription>{t('settings_dialog.description')}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          {/* Resolution */}
           <div className="space-y-2">
-            <Label>Độ phân giải</Label>
+            <Label>{t('settings_dialog.labels.resolution')}</Label>
             <Select
               value={currentSettings.resolution}
               onValueChange={(value) =>
@@ -85,7 +90,7 @@ export function RecordingSettingsDialog({ settings, onSave }: RecordingSettingsD
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Chọn độ phân giải" />
+                <SelectValue placeholder={t('settings_dialog.placeholders.resolution')} />
               </SelectTrigger>
               <SelectContent>
                 {resolutionOptions.map((option) => (
@@ -97,8 +102,9 @@ export function RecordingSettingsDialog({ settings, onSave }: RecordingSettingsD
             </Select>
           </div>
 
+          {/* Frame Rate */}
           <div className="space-y-2">
-            <Label>Tốc độ khung hình</Label>
+            <Label>{t('settings_dialog.labels.fps')}</Label>
             <Select
               value={currentSettings.fps.toString()}
               onValueChange={(value) =>
@@ -106,7 +112,7 @@ export function RecordingSettingsDialog({ settings, onSave }: RecordingSettingsD
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Chọn FPS" />
+                <SelectValue placeholder={t('settings_dialog.placeholders.fps')} />
               </SelectTrigger>
               <SelectContent>
                 {fpsOptions.map((option) => (
@@ -118,15 +124,16 @@ export function RecordingSettingsDialog({ settings, onSave }: RecordingSettingsD
             </Select>
           </div>
 
+          {/* Video Bitrate */}
           <div className="space-y-2">
-            <Label>Bitrate video (kbps)</Label>
+            <Label>{t('settings_dialog.labels.video_bitrate')}</Label>
             <Input
               type="number"
               value={currentSettings.bitrate}
               onChange={(e) =>
                 setCurrentSettings((prev) => ({
                   ...prev,
-                  bitrate: parseInt(e.target.value, 10),
+                  bitrate: parseInt(e.target.value, 10) || 0,
                 }))
               }
               min={500}
@@ -134,8 +141,9 @@ export function RecordingSettingsDialog({ settings, onSave }: RecordingSettingsD
             />
           </div>
 
+          {/* Video Codec */}
           <div className="space-y-2">
-            <Label>Codec video</Label>
+            <Label>{t('settings_dialog.labels.video_codec')}</Label>
             <Select
               value={currentSettings.codec}
               onValueChange={(value) =>
@@ -143,7 +151,7 @@ export function RecordingSettingsDialog({ settings, onSave }: RecordingSettingsD
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Chọn codec" />
+                <SelectValue placeholder={t('settings_dialog.placeholders.codec')} />
               </SelectTrigger>
               <SelectContent>
                 {codecOptions.map((option) => (
@@ -155,10 +163,11 @@ export function RecordingSettingsDialog({ settings, onSave }: RecordingSettingsD
             </Select>
           </div>
 
-          <div className="space-y-4">
-            <h4 className="font-medium">Cấu hình âm thanh</h4>
+          {/* Audio Settings */}
+          <div className="space-y-4 pt-4 border-t">
+            <h4 className="font-medium">{t('settings_dialog.labels.audio_settings')}</h4>
             <div className="space-y-2">
-              <Label>Bitrate âm thanh (kbps)</Label>
+              <Label>{t('settings_dialog.labels.audio_bitrate')}</Label>
               <Input
                 type="number"
                 value={currentSettings.audioQuality.bitrate}
@@ -167,7 +176,7 @@ export function RecordingSettingsDialog({ settings, onSave }: RecordingSettingsD
                     ...prev,
                     audioQuality: {
                       ...prev.audioQuality,
-                      bitrate: parseInt(e.target.value, 10),
+                      bitrate: parseInt(e.target.value, 10) || 0,
                     },
                   }))
                 }
@@ -177,7 +186,7 @@ export function RecordingSettingsDialog({ settings, onSave }: RecordingSettingsD
             </div>
 
             <div className="space-y-2">
-              <Label>Tần số lấy mẫu (Hz)</Label>
+              <Label>{t('settings_dialog.labels.sample_rate')}</Label>
               <Select
                 value={currentSettings.audioQuality.sampleRate.toString()}
                 onValueChange={(value) =>
@@ -191,7 +200,7 @@ export function RecordingSettingsDialog({ settings, onSave }: RecordingSettingsD
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Chọn tần số lấy mẫu" />
+                  <SelectValue placeholder={t('settings_dialog.placeholders.sample_rate')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="44100">44.1 kHz</SelectItem>
@@ -202,7 +211,7 @@ export function RecordingSettingsDialog({ settings, onSave }: RecordingSettingsD
             </div>
 
             <div className="space-y-2">
-              <Label>Kênh âm thanh</Label>
+              <Label>{t('settings_dialog.labels.audio_channels')}</Label>
               <Select
                 value={currentSettings.audioQuality.channels.toString()}
                 onValueChange={(value) =>
@@ -216,11 +225,11 @@ export function RecordingSettingsDialog({ settings, onSave }: RecordingSettingsD
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Chọn số kênh" />
+                  <SelectValue placeholder={t('settings_dialog.placeholders.channels')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">Mono (1 kênh)</SelectItem>
-                  <SelectItem value="2">Stereo (2 kênh)</SelectItem>
+                  <SelectItem value="1">{t('settings_dialog.options.channels.mono')}</SelectItem>
+                  <SelectItem value="2">{t('settings_dialog.options.channels.stereo')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -228,9 +237,9 @@ export function RecordingSettingsDialog({ settings, onSave }: RecordingSettingsD
         </div>
         <div className="flex justify-end space-x-4">
           <Button variant="outline" onClick={() => setIsOpen(false)}>
-            Hủy
+            {t('settings_dialog.buttons.cancel')}
           </Button>
-          <Button onClick={handleSave}>Lưu cấu hình</Button>
+          <Button onClick={handleSave}>{t('settings_dialog.buttons.save')}</Button>
         </div>
       </DialogContent>
     </Dialog>

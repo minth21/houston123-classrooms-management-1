@@ -1,0 +1,420 @@
+{
+  "loading": "Đang tải...",
+  "nav": {
+    "overview": "Tổng quan",
+    "classrooms": "Lớp học",
+    "classroom_list": "Danh sách lớp",
+    "recordings": "Ghi hình",
+    "teachers": "Giảng viên",
+    "settings": "Cài đặt",
+    "new_badge": "Mới"
+  },
+  "sidebar": {
+    "current_location": "Vị trí hiện tại",
+    "company": "Công ty",
+    "select_company": "Chọn công ty",
+    "branch": "Chi nhánh",
+    "select_branch": "Chọn chi nhánh"
+  },
+  "userMenu": {
+    "role": "Giảng viên",
+    "profile": "Thông tin cá nhân",
+    "settings": "Cài đặt",
+    "logout": "Đăng xuất"
+  },
+  "footer": {
+    "copyright": "Đã đăng ký bản quyền."
+  },
+  "common": {
+    "notAvailable": "Không có",
+    "notUpdated": "Chưa cập nhật",
+    "teacher": "Giảng viên",
+    "submitting": "Đang gửi...",
+    "close": "Đóng"
+  },
+  "schedulePage": {
+    "title": "Lịch học",
+    "description": "Xem và quản lý lịch học của các lớp.",
+    "searchPlaceholder": "Tìm kiếm theo mã lớp, môn học, hoặc giảng viên...",
+    "clearSearch": "Xóa",
+    "error": {
+      "loadClassrooms": "Tải lịch học thất bại. Vui lòng thử lại."
+    },
+    "stats": {
+      "activeClasses": "Lớp đang hoạt động",
+      "todayClasses": "Lớp học hôm nay",
+      "totalStudents": "Tổng số học sinh",
+      "teachers": "Giảng viên"
+    },
+    "noResults": {
+      "search": "Không tìm thấy lớp học nào phù hợp với từ khóa tìm kiếm.",
+      "noSchedules": "Không có lịch học nào. Vui lòng thêm lịch cho các lớp học."
+    }
+  },
+  "classScheduleCalendar": {
+    "buttons": {
+      "today": "Hôm nay"
+    },
+    "emptyState": {
+      "noClassesForSelectedTime": "Không có lịch học nào cho thời gian đã chọn"
+    },
+    "monthView": {
+      "noClasses": "Không có lớp học"
+    },
+    "view": {
+      "month": "Tháng",
+      "week": "Tuần",
+      "day": "Ngày",
+      "list": "Danh sách"
+    },
+    "dialog": {
+      "description": "Chi tiết lớp học {{classId}}",
+      "subject": "Môn học",
+      "time": "Thời gian",
+      "room": "Phòng học",
+      "teacher": "Giảng viên",
+      "viewDetailsButton": "Xem chi tiết lớp học"
+    },
+    "listView": {
+      "todayBadge": "Hôm nay",
+      "concurrentClasses_one": "{{count}} lớp cùng giờ",
+      "concurrentClasses_other": "{{count}} lớp cùng giờ",
+      "noClassesThisWeek": "Không có lớp học nào trong tuần này"
+    },
+    "daysOfWeek": [
+      "Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"
+    ],
+    "daysShort": [
+      "CN", "T2", "T3", "T4", "T5", "T6", "T7"
+    ],
+    "details": {
+      "classId": "Mã lớp",
+      "time": "Giờ học",
+      "room": "Phòng",
+      "teacher": "Giảng viên",
+      "studentCount": "Sĩ số",
+      "viewClassDetails": "Xem chi tiết lớp",
+      "classIdLabel": "Mã lớp:",
+      "roomLabel": "Phòng:",
+      "teacherLabel": "Giảng viên:"
+    },
+    "studentCount_one": "{{count}} học sinh",
+    "studentCount_other": "{{count}} học sinh"
+  },
+  "recording": {
+    "page_title": "GHI HÌNH BUỔI HỌC",
+    "page_description": "Quản lý và ghi lại video buổi học từ webcam",
+    "list_title": "Danh sách bản ghi",
+    "download_filename": "buoi-hoc-{{date}}-{{id}}.webm",
+    "available_devices": "Thiết bị khả dụng ({{count}}):",
+    "camera_label": "Camera {{index}}",
+    "webcam": "Webcam",
+    "screen": "Màn hình",
+    "start_webcam": "Bắt đầu ghi Webcam",
+    "start_screen": "Bắt đầu ghi Màn hình",
+    "stop_button": "Dừng",
+    "download_button": "Tải xuống",
+    "no_recordings": "Chưa có video nào được ghi. Nhấn nút \"Bắt đầu ghi mới\" để bắt đầu.",
+    "video_playback_warning": "Không thể phát video:",
+    "status": {
+      "recording_badge": "Đang ghi",
+      "recording": "Đang ghi...",
+      "completed": "Hoàn tất"
+    },
+    "instructions": {
+      "title": "Hướng dẫn:",
+      "step1": "Chọn chế độ ghi: Webcam hoặc Màn hình.",
+      "step2": "Cấp quyền truy cập camera/màn hình và micro khi trình duyệt yêu cầu.",
+      "step3": "Điều chỉnh cài đặt chất lượng video nếu cần.",
+      "step4": "Nhấn nút \"Bắt đầu\" để bắt đầu ghi.",
+      "step5": "Bạn có thể ghi nhiều video cùng lúc.",
+      "step6": "Nhấn \"Dừng\" để kết thúc ghi và xem lại video.",
+      "step7": "Nhấn \"Tải xuống\" để lưu video về máy.",
+      "note_title": "Lưu ý:",
+      "note_1": "Tính năng này hoạt động tốt nhất trên các phiên bản mới nhất của Chrome, Edge, hoặc Firefox.",
+      "note_2": "Khi ghi màn hình, bạn có thể chọn ghi toàn màn hình, cửa sổ ứng dụng hoặc một tab cụ thể."
+    },
+    "log": {
+      "download_error": "Lỗi khi tải video:",
+      "start_screen_recording_error": "Lỗi khi bắt đầu ghi màn hình:",
+      "recording_not_found_warning": "Không tìm thấy bản ghi với ID:",
+      "stop_recorder_error": "Lỗi khi dừng ghi:",
+      "track_stopped": "Đã dừng track: {{kind}}",
+      "stop_track_error": "Lỗi khi dừng track {{kind}}:",
+      "stop_stream_tracks_error": "Lỗi khi dừng các track của stream:",
+      "stop_recording_unknown_error": "Lỗi không xác định khi dừng ghi:"
+    },
+    "error": {
+      "download_failed": "Không thể tải video. Vui lòng thử lại.",
+      "https_required": "API MediaDevices yêu cầu HTTPS hoặc localhost để hoạt động. Vui lòng truy cập trang web qua HTTPS.",
+      "api_unavailable_warning": "MediaDevices API không khả dụng trong môi trường này",
+      "api_unavailable_error": "Trình duyệt của bạn không hỗ trợ hoặc đã chặn API MediaDevices. Vui lòng đảm bảo bạn đang dùng trình duyệt hiện đại và cho phép truy cập camera.",
+      "permission_denied": "Bạn đã từ chối quyền truy cập camera. Vui lòng cấp quyền trong cài đặt trình duyệt để sử dụng tính năng này.",
+      "permission_prompt_failed_warning": "Không thể hiển thị hộp thoại yêu cầu quyền truy cập camera:",
+      "permissions_api_unsupported_warning": "Permissions API không được hỗ trợ đầy đủ:",
+      "no_camera_found": "Không tìm thấy camera. Vui lòng đảm bảo camera đã được kết nối và hoạt động.",
+      "enumerate_devices_error": "Lỗi khi liệt kê thiết bị:",
+      "device_list_inaccessible": "Không thể truy cập danh sách thiết bị. Vui lòng đảm bảo bạn đã cấp quyền truy cập camera.",
+      "check_permissions_error": "Lỗi khi kiểm tra quyền và thiết bị:",
+      "general_permission_check_error": "Đã xảy ra lỗi khi kiểm tra quyền truy cập thiết bị.",
+      "recorder_unsupported": "Trình duyệt của bạn không hỗ trợ MediaRecorder API. Vui lòng sử dụng trình duyệt hiện đại hơn.",
+      "media_access_error_log": "Lỗi khi truy cập thiết bị media:",
+      "permission_denied_camera_mic": "Bạn đã từ chối quyền truy cập camera/micro. Vui lòng cấp quyền trong cài đặt trình duyệt.",
+      "device_not_found": "Không tìm thấy camera hoặc micro trên thiết bị của bạn.",
+      "device_in_use": "Camera hoặc micro của bạn đang được sử dụng bởi một ứng dụng khác.",
+      "overconstrained_error": "Thiết bị của bạn không đáp ứng được yêu cầu ghi hình. Vui lòng kiểm tra lại cài đặt.",
+      "camera_access_failed": "Không thể truy cập camera: {{message}}",
+      "unknown_error": "Lỗi không xác định",
+      "create_recorder_error_log": "Lỗi khi tạo MediaRecorder:",
+      "create_recorder_failed": "Không thể tạo bộ ghi: {{message}}",
+      "create_blob_error_log": "Lỗi khi tạo blob video:",
+      "blob_creation_failed": "Không thể xử lý video đã ghi.",
+      "recording_error_log": "Lỗi trong quá trình ghi:",
+      "recording_error": "Đã xảy ra lỗi trong quá trình ghi. Vui lòng thử lại.",
+      "start_recording_unknown_error_log": "Lỗi không xác định khi bắt đầu ghi:",
+      "start_recording_unknown_error": "Không thể bắt đầu ghi. Đã xảy ra lỗi không xác định.",
+      "screen_unsupported": "Trình duyệt của bạn không hỗ trợ ghi màn hình. Vui lòng sử dụng phiên bản mới nhất của Chrome, Edge hoặc Firefox.",
+      "screen_permission_denied": "Bạn đã từ chối quyền ghi màn hình.",
+      "screen_access_failed": "Không thể truy cập màn hình: {{message}}",
+      "start_screen_recording_failed": "Không thể bắt đầu ghi màn hình. Đã xảy ra lỗi không xác định.",
+      "stop_recording_failed": "Không thể dừng ghi do lỗi. Vui lòng thử lại hoặc tải lại trang."
+    }
+  },
+  "settings_dialog": {
+    "trigger_button": "Cài đặt ghi hình",
+    "title": "Cài đặt ghi hình",
+    "description": "Điều chỉnh các thông số chất lượng video và âm thanh cho buổi học.",
+    "labels": {
+      "resolution": "Độ phân giải",
+      "fps": "Tốc độ khung hình (FPS)",
+      "video_bitrate": "Bitrate video (kbps)",
+      "video_codec": "Codec video",
+      "audio_settings": "Cài đặt âm thanh",
+      "audio_bitrate": "Bitrate âm thanh (kbps)",
+      "sample_rate": "Tần số lấy mẫu (Hz)",
+      "audio_channels": "Kênh âm thanh"
+    },
+    "placeholders": {
+      "resolution": "Chọn độ phân giải",
+      "fps": "Chọn FPS",
+      "codec": "Chọn codec",
+      "sample_rate": "Chọn tần số lấy mẫu",
+      "channels": "Chọn kênh âm thanh"
+    },
+    "options": {
+      "resolutions": {
+        "full_hd": "Full HD (1920x1080)",
+        "hd": "HD (1280x720)",
+        "sd": "SD (854x480)",
+        "low": "Thấp (640x360)"
+      },
+      "channels": {
+        "mono": "Mono (1 kênh)",
+        "stereo": "Stereo (2 kênh)"
+      }
+    },
+    "buttons": {
+      "cancel": "Hủy",
+      "save": "Lưu"
+    }
+  },
+  "teacherDetailPage": {
+    "errors": {
+      "notFound": "Không tìm thấy thông tin giảng viên",
+      "loadFailed": "Có lỗi xảy ra khi tải thông tin giảng viên. Vui lòng thử lại."
+    },
+    "backToList": "Quay lại danh sách giáo viên",
+    "staffIdLabel": "Mã GV: {{staffId}}",
+    "basicInfo": {
+      "position": "Chức vụ",
+      "education": "Trình độ học vấn",
+      "branch": "Chi nhánh",
+      "defaultPosition": "Giảng viên"
+    },
+    "tabs": {
+      "schedule": "Lịch dạy",
+      "moreInfo": "Thông tin thêm"
+    },
+    "schedule": {
+      "title": "Lịch dạy trong tuần",
+      "noSchedule": "Chưa có lịch dạy"
+    },
+    "moreInfo": {
+      "title": "Thông tin chi tiết",
+      "personalId": "CMND/CCCD",
+      "birthday": "Ngày sinh",
+      "salaryInfo": "Thông tin lương",
+      "hourlyRate": "Lương theo giờ",
+      "shiftRate": "Lương ca",
+      "monthlyRate": "Lương tháng",
+      "salaryFormat": "{{value}} VNĐ"
+    }
+  },
+  "teachersPage": {
+    "header": {
+      "title": "DANH SÁCH GIẢNG VIÊN",
+      "description": "Quản lý danh sách giảng viên của trung tâm"
+    },
+    "searchPlaceholder": "Tìm kiếm giảng viên...",
+    "errors": {
+      "invalidData": "Dữ liệu không hợp lệ",
+      "selectCompanyAndBranch": "Vui lòng chọn công ty và chi nhánh trước",
+      "selectCompany": "Vui lòng chọn công ty trước",
+      "selectBranch": "Vui lòng chọn chi nhánh trước",
+      "noBranchFound": "Không tìm thấy chi nhánh nào cho công ty đã chọn",
+      "invalidBranch": "Chi nhánh đã chọn không hợp lệ",
+      "loadFailed": "Không thể tải danh sách giáo viên. Vui lòng thử lại."
+    },
+    "selectionPrompt": {
+      "title": "Vui lòng chọn công ty và chi nhánh",
+      "description": "Bạn cần chọn công ty và chi nhánh trước khi xem danh sách giáo viên",
+      "instruction": "Sử dụng menu thả xuống ở phía trên để chọn"
+    },
+    "emptyState": {
+      "noTeachers": "Chưa có giảng viên nào trong hệ thống.",
+      "noSearchResults": "Không tìm thấy giảng viên nào phù hợp với từ khóa \"{{query}}\""
+    },
+    "tableHeaders": {
+      "teacher": "Giảng viên",
+      "Id": "Mã GV",
+      "position": "Chức vụ",
+      "email": "Email",
+      "phone": "Số điện thoại",
+      "branch": "Chi nhánh",
+      "actions": "Thao tác"
+    },
+    "defaultPosition": "Giảng viên",
+    "actions": {
+      "details": "Chi tiết"
+    }
+  },
+  "classroomDetailPage": {
+    "backToList": "Quay lại danh sách lớp học",
+    "errors": {
+      "loadFailed": "Không thể tải dữ liệu lớp học",
+      "noDataFound": "Không tìm thấy dữ liệu điểm danh"
+    },
+    "toasts": {
+      "saveRecordingSettingsSuccess": "Đã lưu cấu hình ghi hình thành công",
+      "saveRecordingSettingsError": "Có lỗi xảy ra khi lưu cấu hình ghi hình",
+      "addingNoteLoading": "Đang thêm ghi chú...",
+      "addNoteSuccess": "Đã thêm ghi chú thành công",
+      "addNoteError": "Có lỗi xảy ra khi thêm ghi chú",
+      "addNoteFallbackError": "Không thể thêm ghi chú. Vui lòng thử lại sau.",
+      "addingDiaryLoading": "Đang thêm mục nhật ký...",
+      "addDiarySuccess": "Đã thêm mục nhật ký thành công",
+      "addDiaryError": "Có lỗi xảy ra khi thêm mục nhật ký",
+      "addDiaryFallbackError": "Không thể thêm mục nhật ký. Vui lòng thử lại sau."
+    },
+    "infoCard": {
+      "schedule": "Lịch học",
+      "room": "Phòng học",
+      "teacher": "Giảng viên",
+      "recording": "Ghi hình"
+    },
+    "tabs": {
+      "attendance": "Điểm danh",
+      "diary": "Nhật ký lớp học"
+    },
+    "attendance": {
+      "title": "Bản ghi chấm công",
+      "description": "Xem và quản lý điểm danh lớp học",
+      "noRecords": "Không có bản ghi điểm danh nào",
+      "table": {
+        "date": "Ngày",
+        "time": "Giờ học",
+        "room": "Phòng học",
+        "studentCount": "Số học sinh",
+        "status": "Trạng thái",
+        "actions": "Hành động"
+      },
+      "status": {
+        "confirmed": "Đã xác nhận",
+        "attended": "Đã điểm danh",
+        "notAttended": "Chưa điểm danh"
+      },
+      "addNoteButton": "Thêm ghi chú",
+      "dialog": {
+        "title": "Thêm ghi chú - {{date}}",
+        "description": "Thêm ghi chú hoặc nhận xét về buổi học này",
+        "noteLabel": "Ghi chú",
+        "attachmentsLabel": "Đính kèm",
+        "placeholder": "Nhập ghi chú của bạn tại đây...",
+        "filesSelected_one": "Đã chọn {{count}} tệp",
+        "filesSelected_other": "Đã chọn {{count}} tệp",
+        "submitButton": "Gửi ghi chú"
+      }
+    },
+    "diary": {
+      "title": "Nhật ký lớp học",
+      "description": "Ghi lại các ghi chú, quan sát và tiến trình cho lớp học này",
+      "noEntries": "Chưa có mục nhật ký nào",
+      "newEntryLabel": "Mục nhật ký mới",
+      "placeholder": "Hôm nay lớp học như thế nào?",
+      "submitButton": "Đăng mục nhật ký",
+      "attachmentFile": "tệp-đính-kèm-{{index}}"
+    }
+  },
+  "classroomsPage": {
+    "header": {
+      "title": "Danh sách Lớp học",
+      "description": "Xem và quản lý tất cả lớp học của bạn"
+    },
+    "searchPlaceholder": "Tìm kiếm lớp học...",
+    "errors": {
+      "selectCompanyAndBranch": "Vui lòng chọn công ty và chi nhánh trước",
+      "loadFailed": "Không thể tải danh sách lớp học. Vui lòng thử lại."
+    },
+    "filters": {
+      "all": "Tất cả lớp",
+      "today": "Lớp học hôm nay",
+      "upcoming": "Sắp tới",
+      "monday": "Thứ 2",
+      "wednesday": "Thứ 4",
+      "friday": "Thứ 6",
+      "weekend": "Cuối tuần"
+    },
+     "selectionPrompt": {
+      "title": "Vui lòng chọn công ty và chi nhánh",
+      "description": "Bạn cần chọn công ty và chi nhánh trước khi xem danh sách lớp học"
+    },
+    "emptyState": {
+      "noClassrooms": "Không có lớp học nào trong hệ thống.",
+      "noResults": "Không tìm thấy lớp học nào với bộ lọc hiện tại."
+    },
+    "tableHeaders": {
+      "classId": "Mã lớp",
+      "subject": "Tên môn học",
+      "teacher": "Giáo viên",
+       "startDate": "Ngày bắt đầu",
+      "endDate": "Ngày kết thúc",
+      "studentCount": "Sĩ số",
+      "status": "Tình trạng",
+      "schedule": "Lịch học",
+      "actions": "Hành động"
+    },
+    "status": {
+      "active": "Đang hoạt động",
+      "inactive": "Không hoạt động"
+    },
+    "actions": {
+      "viewSchedule": "Lịch học",
+      "details": "Xem chi tiết"
+    },
+    "dialog": {
+      "title": "Lịch học lớp {{classId}}",
+      "noSchedule": "Lớp này chưa có lịch học.",
+      "roomLabel": "Phòng:",
+      "scheduleTitle": "Lịch học trong tuần",
+      "viewAllSchedulesButton": "Xem tất cả lịch học",
+      "tableHeaders": {
+        "day": "Ngày",
+        "start": "Bắt đầu",
+        "end": "Kết thúc",
+        "room": "Phòng"
+      },
+      "studentCount_one": "Sĩ số: {{count}} học viên",
+      "studentCount_other": "Sĩ số: {{count}} học viên"
+    }
+  }
+}

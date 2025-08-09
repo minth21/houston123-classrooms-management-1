@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, isSameDay } from "date-fns";
-import { vi } from "date-fns/locale";
+import { vi, enUS } from "date-fns/locale"; 
 import {
   Clock,
   MapPin,
@@ -35,20 +35,7 @@ import {
   List,
 } from "lucide-react";
 import Link from "next/link";
-
-// Days of week in Vietnamese
-const DAYS_OF_WEEK = [
-  "Chủ nhật",
-  "Thứ 2",
-  "Thứ 3",
-  "Thứ 4",
-  "Thứ 5",
-  "Thứ 6",
-  "Thứ 7",
-];
-
-// Day abbreviations in Vietnamese
-const DAYS_SHORT = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+import { useTranslation } from "react-i18next"; 
 
 // Hour slots for the schedule (5AM to 10PM)
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 5);
@@ -83,14 +70,13 @@ export default function ClassScheduleCalendar({
   onViewChange,
   onDateChange,
 }: ClassScheduleCalendarProps) {
+  // --- Setup ---
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language.startsWith('vi') ? vi : enUS;
   const [date, setDate] = useState<Date>(initialDate);
   const [view, setView] = useState<CalendarView>(initialView);
-  const [scheduledClasses, setScheduledClasses] = useState<ScheduledClass[]>(
-    []
-  );
-  const [selectedClass, setSelectedClass] = useState<ScheduledClass | null>(
-    null
-  );
+  const [scheduledClasses, setScheduledClasses] = useState<ScheduledClass[]>([]);
+  const [selectedClass, setSelectedClass] = useState<ScheduledClass | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [displayDates, setDisplayDates] = useState<Date[]>([]);
   const [calendarIsOpen, setCalendarIsOpen] = useState(false);
@@ -120,51 +106,61 @@ export default function ClassScheduleCalendar({
     setView(newView);
     onViewChange?.(newView);
   };
+ 
+  // --- Lấy dữ liệu từ file JSON ---
+const daysOfWeekData = t("classScheduleCalendar.daysOfWeek", { returnObjects: true });
+const DAYS_OF_WEEK: string[] = Array.isArray(daysOfWeekData) ? daysOfWeekData : [];
+
+const daysShortData = t("classScheduleCalendar.daysShort", { returnObjects: true });
+const DAYS_SHORT: string[] = Array.isArray(daysShortData) ? daysShortData : [];
 
   // Process classrooms to extract scheduled classes
-  useEffect(() => {
-    const processSchedules = () => {
-      // Create a map to keep track of colors by subject to maintain consistency
-      const subjectColorMap = new Map();
-      const processed: ScheduledClass[] = [];
+useEffect(() => {
+  const processSchedules = () => {
+    // Create a map to keep track of colors by subject to maintain consistency
+    const subjectColorMap = new Map();
+    const processed: ScheduledClass[] = [];
 
-      classrooms.forEach((classroom) => {
-        if (classroom.schedule && classroom.schedule.length > 0) {
-          classroom.schedule.forEach((schedule, index) => {
-            if (
-              schedule.dayOfWeek !== undefined &&
-              schedule.beginTime &&
-              schedule.finishTime
-            ) {
-              // Assign a consistent color based on subject name
-              let color = subjectColorMap.get(classroom.subjectName);
-              if (!color) {
-                color = colors[subjectColorMap.size % colors.length];
-                subjectColorMap.set(classroom.subjectName, color);
-              }
-
-              processed.push({
-                id: `${classroom.classID}-${index}`,
-                classId: classroom.classID,
-                subjectName: classroom.subjectName,
-                roomId: schedule.classRoomCode || "N/A",
-                teacherName: classroom.teacherName || "N/A",
-                startTime: schedule.beginTime,
-                endTime: schedule.finishTime,
-                day: schedule.dayOfWeek,
-                color,
-                studentCount: classroom.studentNumber || 0,
-              });
+    classrooms.forEach((classroom) => {
+      if (classroom.schedule && classroom.schedule.length > 0) {
+        classroom.schedule.forEach((schedule, index) => {
+          if (
+            schedule.dayOfWeek !== undefined &&
+            schedule.beginTime &&
+            schedule.finishTime
+          ) {
+            // Assign a consistent color based on subject name
+            let color = subjectColorMap.get(classroom.subjectName);
+            if (!color) {
+              color = colors[subjectColorMap.size % colors.length];
+              subjectColorMap.set(classroom.subjectName, color);
             }
-          });
-        }
-      });
+
+            processed.push({
+              id: `${classroom.classID}-${index}`,
+              classId: classroom.classID,
+              subjectName: classroom.subjectName,
+              // highlight-start
+              roomId: schedule.classRoomCode || t("common.notAvailable"),
+              teacherName: classroom.teacherName || t("common.notAvailable"),
+              // highlight-end
+              startTime: schedule.beginTime,
+              endTime: schedule.finishTime,
+              day: schedule.dayOfWeek,
+              color,
+              studentCount: classroom.studentNumber || 0,
+            });
+          }
+        });
+      }
+    });
 
       setScheduledClasses(processed);
-    };
+  };
 
-    processSchedules();
-  }, [classrooms]);
+  processSchedules();
+  // highlight-next-line
+}, [classrooms, t]); // Thêm 't' vào dependency array
 
   // Update display dates based on selected date and view
   useEffect(() => {
@@ -310,39 +306,41 @@ export default function ClassScheduleCalendar({
     return groups;
   };
 
-  // Render week view
-  const renderWeekView = () => {
-    return (
-      <div className="grid grid-cols-7 gap-px h-[700px] border rounded-md overflow-hidden bg-border">
-        {displayDates.map((displayDate, dayIndex) => (
-          <div key={dayIndex} className="flex flex-col h-full bg-card">
-            <div
-              className={`text-center py-2 font-medium ${
-                isSameDay(displayDate, new Date())
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted/20"
-              }`}
-            >
-              <div>{DAYS_OF_WEEK[displayDate.getDay()]}</div>
-              <div className="text-sm">{format(displayDate, "dd/MM")}</div>
-            </div>
-            <div className="flex-1 relative overflow-hidden">
-              {HOURS.map((hour) => (
-                <div
-                  key={hour}
-                  className="absolute w-full border-t border-border/30"
-                  style={{ top: `${((hour - 5) / 18) * 100}%` }}
-                >
-                  <div className="text-xs text-muted-foreground -mt-2 ml-1">
-                    {hour}:00
-                  </div>
+// Render week view
+const renderWeekView = () => {
+  return (
+    <div className="grid grid-cols-7 gap-px h-[700px] border rounded-md overflow-hidden bg-border">
+      {displayDates.map((displayDate, dayIndex) => (
+        <div key={dayIndex} className="flex flex-col h-full bg-card">
+          <div
+            className={`text-center py-2 font-medium ${
+              isSameDay(displayDate, new Date())
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted/20"
+            }`}
+          >
+    {/* Dữ liệu từ mảng DAYS_OF_WEEK đã được dịch */}
+            <div>{DAYS_OF_WEEK[displayDate.getDay()]}</div>
+            <div className="text-sm">{format(displayDate, "dd/MM")}</div>
+          </div>
+          <div className="flex-1 relative overflow-hidden">
+            {HOURS.map((hour) => (
+              <div
+                key={hour}
+                className="absolute w-full border-t border-border/30"
+                style={{ top: `${((hour - 5) / 18) * 100}%` }}
+              >
+                <div className="text-xs text-muted-foreground -mt-2 ml-1">
+                  {hour}:00
                 </div>
-              ))}
+              </div>
+            ))}
 
-              {(() => {
-                const dayClasses = scheduledClasses.filter(
-                  (classItem) => classItem.day === displayDate.getDay()
-                );
+             {(() => {
+              const dayClasses = scheduledClasses.filter(
+                (classItem) => classItem.day === displayDate.getDay()
+              );
+
 
                 // Helper function to check if two classes overlap
                 const doClassesOverlap = (
@@ -380,14 +378,13 @@ export default function ClassScheduleCalendar({
                   }
                 });
 
-                return classGroups.map((group, groupIndex) => {
-                  return group.map((classItem, itemIndex) => {
-                    const startPosition = getClassPosition(classItem.startTime);
-                    const duration = getClassTimePeriod(
-                      classItem.startTime,
-                      classItem.endTime
-                    );
-
+  return classGroups.map((group, groupIndex) => {
+                return group.map((classItem, itemIndex) => {
+                  const startPosition = getClassPosition(classItem.startTime);
+                  const duration = getClassTimePeriod(
+                    classItem.startTime,
+                    classItem.endTime
+                  );
                     // Calculate width and position for overlapping items
                     const itemWidth = 92 / group.length; // Leave small margin on edges
                     const leftPosition = itemIndex * itemWidth + 4; // Start from 4% margin
@@ -429,7 +426,7 @@ export default function ClassScheduleCalendar({
                                     </div>
                                     <div className="text-xs truncate flex items-center">
                                       <Users className="inline-block h-3 w-3 mr-1 opacity-70" />
-                                      {classItem.studentCount || "N/A"}
+                                    {t("classScheduleCalendar.studentCount", { count: classItem.studentCount || 0 })}
                                     </div>
                                   </>
                                 )}
@@ -444,15 +441,15 @@ export default function ClassScheduleCalendar({
                               <div className="grid gap-1 text-xs">
                                 <p className="flex items-center">
                                   <BookOpen className="h-3 w-3 mr-1.5 opacity-70" />
-                                  Mã lớp: {classItem.classId}
+                                {t("classScheduleCalendar.details.classIdLabel")}{" "}{classItem.classId}
                                 </p>
                                 <p className="flex items-center">
                                   <MapPin className="h-3 w-3 mr-1.5 opacity-70" />
-                                  Phòng: {classItem.roomId}
+                                {t("classScheduleCalendar.details.roomLabel")}{" "}{classItem.roomId}
                                 </p>
                                 <p className="flex items-center">
                                   <Users className="h-3 w-3 mr-1.5 opacity-70" />
-                                  Giáo viên: {classItem.teacherName}
+                                {t("classScheduleCalendar.details.teacherLabel")}{" "}{classItem.teacherName}
                                 </p>
                                 <p className="flex items-center">
                                   <Clock className="h-3 w-3 mr-1.5 opacity-70" />
@@ -497,22 +494,23 @@ export default function ClassScheduleCalendar({
                 : "text-muted-foreground"
             }
           >
-            {format(dayDate, "dd MMMM yyyy", { locale: vi })}
-          </div>
+         {/* Giả sử bạn có biến 'dateLocale' được lấy từ ngôn ngữ hiện tại */}
+          {/* const dateLocale = i18n.language === 'vi' ? vi : enUS; */}
+          {format(dayDate, "dd MMMM yyyy", { locale: dateLocale })}          </div>
         </div>
-        <div className="relative h-[calc(100%-60px)]">
-          {HOURS.map((hour) => (
-            <div
-              key={hour}
-              className="flex absolute w-full h-[5.55%] border-t border-border/30"
-              style={{ top: `${((hour - 5) / 18) * 100}%` }}
-            >
-              <div className="w-16 text-xs text-muted-foreground flex items-start justify-center pt-1 border-r border-border/30">
-                {hour}:00
-              </div>
-              <div className="flex-1"></div>
+      <div className="relative h-[calc(100%-60px)]">
+        {HOURS.map((hour) => (
+          <div
+            key={hour}
+            className="flex absolute w-full h-[5.55%] border-t border-border/30"
+            style={{ top: `${((hour - 5) / 18) * 100}%` }}
+          >
+            <div className="w-16 text-xs text-muted-foreground flex items-start justify-center pt-1 border-r border-border/30">
+              {hour}:00
             </div>
-          ))}
+            <div className="flex-1"></div>
+          </div>
+        ))}
 
           {(() => {
             const dayClasses = scheduledClasses.filter(
@@ -522,27 +520,20 @@ export default function ClassScheduleCalendar({
             const classGroups = getDayClassGroups(dayClasses);
 
             return classGroups.map((group, groupIndex) => {
-              // Calculate how many classes are in this group for width distribution
-              const groupSize = group.length;
-
-              return group.map((classItem, itemIndex) => {
-                const startPosition = getClassPosition(classItem.startTime);
-                const duration = getClassTimePeriod(
-                  classItem.startTime,
-                  classItem.endTime
-                );
+            return group.map((classItem, itemIndex) => {
+              const startPosition = getClassPosition(classItem.startTime);
+              const duration = getClassTimePeriod(
+                classItem.startTime,
+                classItem.endTime
+              );
 
                 // Improved width calculation with margins between items
-                const totalWidthPercentage = 84; // 100 - 16 (time column)
-                const margin = groupSize > 1 ? 2 : 0; // Margin between items
-                const itemWidth =
-                  (totalWidthPercentage - margin * (groupSize - 1)) / groupSize;
+                const totalWidthPercentage = 84;
+              const margin = group.length > 1 ? 2 : 0;
+              const itemWidth = (totalWidthPercentage - margin * (group.length - 1)) / group.length;
+              const leftPosition = 16 + itemIndex * (itemWidth + margin);
+              const minHeight = Math.max(60, duration * 20);
 
-                // Calculate the left position with margins
-                const leftPosition = 16 + itemIndex * (itemWidth + margin);
-
-                // Ensure minimum height for very short classes
-                const minHeight = Math.max(60, duration * 20);
 
                 return (
                   <TooltipProvider key={classItem.id}>
@@ -565,10 +556,10 @@ export default function ClassScheduleCalendar({
                             {classItem.subjectName}
                           </div>
                           <div className="text-sm truncate">
-                            Mã lớp: {classItem.classId}
+                          {t("classScheduleCalendar.details.classIdLabel")}{" "}{classItem.classId}
                           </div>
                           <div className="text-sm truncate">
-                            Phòng: {classItem.roomId}
+                          {t("classScheduleCalendar.details.roomLabel")}{" "}{classItem.roomId}
                           </div>
                           <div className="text-sm truncate mt-1 flex items-center">
                             <Clock className="inline h-3 w-3 mr-1" />
@@ -578,8 +569,9 @@ export default function ClassScheduleCalendar({
                           {duration > 1.5 && (
                             <div className="text-sm truncate mt-1 flex items-center">
                               <Users className="inline h-3 w-3 mr-1" />
-                              {classItem.studentCount || "N/A"} học sinh
-                            </div>
+                            {/* highlight-start */}
+                            {t("classScheduleCalendar.studentCount", { count: classItem.studentCount || 0 })}
+                            {/* highlight-end */}                            </div>
                           )}
                         </div>
                       </TooltipTrigger>
@@ -588,15 +580,15 @@ export default function ClassScheduleCalendar({
                           <p className="font-medium">{classItem.subjectName}</p>
                           <p className="text-xs flex items-center">
                             <BookOpen className="h-3 w-3 mr-1 inline" />
-                            Mã lớp: {classItem.classId}
+                          {t("classScheduleCalendar.details.classIdLabel")}{" "}{classItem.classId}
                           </p>
                           <p className="text-xs flex items-center">
                             <MapPin className="h-3 w-3 mr-1 inline" />
-                            Phòng: {classItem.roomId}
+                           {t("classScheduleCalendar.details.roomLabel")}{" "}{classItem.roomId}
                           </p>
                           <p className="text-xs flex items-center">
                             <Users className="h-3 w-3 mr-1 inline" />
-                            Giáo viên: {classItem.teacherName}
+                           {t("classScheduleCalendar.details.teacherLabel")}{" "}{classItem.teacherName}
                           </p>
                           <p className="text-xs flex items-center">
                             <Clock className="h-3 w-3 mr-1 inline" />
@@ -632,73 +624,75 @@ export default function ClassScheduleCalendar({
     });
 
     return (
-      <div className="border rounded-md overflow-hidden bg-card">
-        {/* Month header */}
-        <div className="bg-muted/20 font-medium p-3 text-center border-b">
-          {format(
-            new Date(date.getFullYear(), date.getMonth(), 1),
-            "MMMM yyyy",
-            { locale: vi }
-          )}
-        </div>
+    <div className="border rounded-md overflow-hidden bg-card">
+      {/* Month header */}
+      <div className="bg-muted/20 font-medium p-3 text-center border-b">
+        {format(
+          new Date(date.getFullYear(), date.getMonth(), 1),
+          "MMMM yyyy",
+          // highlight-next-line
+          { locale: dateLocale } // Sử dụng dateLocale để tự động đổi ngôn ngữ
+        )}
+      </div>
 
         {/* Day headers */}
-        <div className="grid grid-cols-7 bg-muted/10 text-center py-2 border-b">
-          {DAYS_SHORT.map((day, index) => (
-            <div key={index} className="text-xs font-medium">
-              {day}
-            </div>
-          ))}
-        </div>
+      <div className="grid grid-cols-7 bg-muted/10 text-center py-2 border-b">
+        {DAYS_SHORT.map((day, index) => (
+          <div key={index} className="text-xs font-medium">
+            {day}
+          </div>
+        ))}
+      </div>
 
-        {/* Calendar grid */}
-        <div className="bg-card">
-          {weeks.map((week, weekIndex) => (
-            <div
-              key={weekIndex}
-              className="grid grid-cols-7 border-b last:border-b-0"
-            >
-              {week.map((day, dayIndex) => {
-                const isCurrentMonth = day.getMonth() === date.getMonth();
-                const isToday = isSameDay(day, new Date());
-                const dayClasses = getClassesForDate(day);
+       {/* Calendar grid */}
+      <div className="bg-card">
+        {weeks.map((week, weekIndex) => (
+          <div
+            key={weekIndex}
+            className="grid grid-cols-7 border-b last:border-b-0"
+          >
+            {week.map((day, dayIndex) => {
+              const isCurrentMonth = day.getMonth() === date.getMonth();
+              const isToday = isSameDay(day, new Date());
+              const dayClasses = getClassesForDate(day);
 
-                return (
-                  <div
-                    key={dayIndex}
-                    className={`min-h-[120px] border-r last:border-r-0 p-1 ${
-                      isCurrentMonth ? "" : "bg-muted/10 text-muted-foreground"
-                    } ${isToday ? "ring-2 ring-primary ring-inset" : ""}`}
-                  >
-                    <div className="text-right text-xs p-1">
-                      {format(day, "d")}
-                    </div>
+              return (
+                <div
+                  key={dayIndex}
+                  className={`min-h-[120px] border-r last:border-r-0 p-1 ${
+                    isCurrentMonth ? "" : "bg-muted/10 text-muted-foreground"
+                  } ${isToday ? "ring-2 ring-primary ring-inset" : ""}`}
+                >
+                  <div className="text-right text-xs p-1">
+                    {format(day, "d")}
+                  </div>
 
-                    <ScrollArea className="h-[90px]">
-                      <div className="space-y-1 px-1">
-                        {dayClasses.length > 0 ? (
-                          dayClasses.map((classItem) => (
-                            <div
-                              key={classItem.id}
-                              onClick={() => handleClassClick(classItem)}
-                              className={`text-xs p-1 rounded cursor-pointer ${classItem.color}`}
-                            >
-                              <div className="font-medium truncate">
-                                {formatTime(classItem.startTime)} -{" "}
-                                {formatTime(classItem.endTime)}
-                              </div>
-                              <div className="truncate">
-                                {classItem.subjectName}
-                              </div>
+                  <ScrollArea className="h-[90px]">
+                    <div className="space-y-1 px-1">
+                      {dayClasses.length > 0 ? (
+                        dayClasses.map((classItem) => (
+                          <div
+                            key={classItem.id}
+                            onClick={() => handleClassClick(classItem)}
+                            className={`text-xs p-1 rounded cursor-pointer ${classItem.color}`}
+                          >
+                            <div className="font-medium truncate">
+                              {formatTime(classItem.startTime)} -{" "}
+                              {formatTime(classItem.endTime)}
                             </div>
-                          ))
-                        ) : isCurrentMonth ? (
-                          <div className="text-xs text-muted-foreground text-center py-2">
-                            Không có lớp học
+                            <div className="truncate">
+                              {classItem.subjectName}
+                            </div>
                           </div>
-                        ) : null}
-                      </div>
-                    </ScrollArea>
+                        ))
+                      ) : isCurrentMonth ? (
+                        <div className="text-xs text-muted-foreground text-center py-2">
+                          {/* highlight-next-line */}
+                          {t("classScheduleCalendar.monthView.noClasses")}
+                        </div>
+                      ) : null}
+                    </div>
+                  </ScrollArea>
                   </div>
                 );
               })}
@@ -710,128 +704,133 @@ export default function ClassScheduleCalendar({
   };
 
   // Render list view
-  const renderListView = () => {
-    // Use displayDates which now contains current week's dates
-    return (
-      <div className="space-y-6">
-        {displayDates.map((day, dayIndex) => {
-          const dayClasses = getClassesForDate(day);
-          if (dayClasses.length === 0) return null;
+const renderListView = () => {
+  // Use displayDates which now contains current week's dates
+  return (
+    <div className="space-y-6">
+      {displayDates.map((day, dayIndex) => {
+        const dayClasses = getClassesForDate(day);
+        if (dayClasses.length === 0) return null;
 
-          // Group classes by time slot to handle overlapping
-          const timeGroups = new Map<string, ScheduledClass[]>();
-          dayClasses.forEach((classItem) => {
-            const timeKey = `${classItem.startTime}-${classItem.endTime}`;
-            if (!timeGroups.has(timeKey)) {
-              timeGroups.set(timeKey, []);
-            }
-            const group = timeGroups.get(timeKey);
-            if (group) {
-              group.push(classItem);
-            }
-          });
+        // Group classes by time slot to handle overlapping
+        const timeGroups = new Map<string, ScheduledClass[]>();
+        dayClasses.forEach((classItem) => {
+          const timeKey = `${classItem.startTime}-${classItem.endTime}`;
+          if (!timeGroups.has(timeKey)) {
+            timeGroups.set(timeKey, []);
+          }
+          const group = timeGroups.get(timeKey);
+          if (group) {
+            group.push(classItem);
+          }
+        });
 
-          const isToday = isSameDay(day, new Date());
+        const isToday = isSameDay(day, new Date());
 
-          return (
-            <Card key={dayIndex} className={isToday ? "border-primary" : ""}>
-              <CardHeader className={`pb-2 ${isToday ? "bg-primary/5" : ""}`}>
-                {" "}
-                <CardTitle className="text-base flex items-center">
-                  {/* <Calendar className="h-4 w-4 mr-2" /> */}
-                  {format(day, "EEEE, dd/MM/yyyy", { locale: vi })}
-                  {isToday && (
-                    <Badge variant="default" className="ml-2">
-                      Hôm nay
-                    </Badge>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="grid gap-4">
-                  {Array.from(timeGroups.entries())
-                    .sort(([timeA], [timeB]) => {
-                      const [startA] = timeA.split("-");
-                      const [startB] = timeB.split("-");
-                      return startA.localeCompare(startB);
-                    })
-                    .map(([timeKey, classes]) => {
-                      const [startTime, endTime] = timeKey.split("-");
-                      return (
-                        <div key={timeKey} className="relative space-y-2">
-                          <div className="flex items-center justify-between border-b pb-1">
-                            <div className="flex items-center text-sm font-medium">
-                              <Clock className="h-4 w-4 mr-1.5" />
-                              {formatTime(startTime)} - {formatTime(endTime)}
-                            </div>
-                            {classes.length > 1 && (
-                              <Badge variant="secondary" className="text-xs">
-                                {classes.length} lớp cùng giờ
-                              </Badge>
-                            )}
+        return (
+          <Card key={dayIndex} className={isToday ? "border-primary" : ""}>
+            <CardHeader className={`pb-2 ${isToday ? "bg-primary/5" : ""}`}>
+              {" "}
+              <CardTitle className="text-base flex items-center">
+                {/* Sử dụng dateLocale để tự động đổi ngôn ngữ */}
+                {format(day, "EEEE, dd/MM/yyyy", { locale: dateLocale })}
+                {isToday && (
+                  <Badge variant="default" className="ml-2">
+                    {/* highlight-next-line */}
+                    {t("classScheduleCalendar.listView.todayBadge")}
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="grid gap-4">
+                {Array.from(timeGroups.entries())
+                  .sort(([timeA], [timeB]) => {
+                    const [startA] = timeA.split("-");
+                    const [startB] = timeB.split("-");
+                    return startA.localeCompare(startB);
+                  })
+                  .map(([timeKey, classes]) => {
+                    const [startTime, endTime] = timeKey.split("-");
+                    return (
+                      <div key={timeKey} className="relative space-y-2">
+                        <div className="flex items-center justify-between border-b pb-1">
+                          <div className="flex items-center text-sm font-medium">
+                            <Clock className="h-4 w-4 mr-1.5" />
+                            {formatTime(startTime)} - {formatTime(endTime)}
                           </div>
+                          {classes.length > 1 && (
+                            <Badge variant="secondary" className="text-xs">
+                              {/* highlight-next-line */}
+                              {t("classScheduleCalendar.listView.concurrentClasses", { count: classes.length })}
+                            </Badge>
+                          )}
+                        </div>
 
-                          <div className="grid gap-2">
-                            {classes.map((classItem: ScheduledClass) => (
-                              <div
-                                key={classItem.id}
-                                className={`p-3 rounded-md border ${classItem.color} cursor-pointer hover:brightness-95 transition-all`}
-                                onClick={() => handleClassClick(classItem)}
-                              >
-                                <div className="grid sm:grid-cols-[1fr,auto] gap-3">
-                                  <div className="space-y-1">
-                                    <div className="font-medium">
-                                      {classItem.subjectName}
-                                    </div>
-                                    <div className="flex flex-wrap gap-3">
-                                      <div className="flex items-center text-sm">
-                                        <BookOpen className="h-3.5 w-3.5 mr-1.5 opacity-70" />
-                                        {classItem.classId}
-                                      </div>
-                                      <div className="flex items-center text-sm">
-                                        <MapPin className="h-3.5 w-3.5 mr-1.5 opacity-70" />
-                                        {classItem.roomId}
-                                      </div>
-                                    </div>
+                                               <div className="grid gap-2">
+                          {classes.map((classItem: ScheduledClass) => (
+                            <div
+                              key={classItem.id}
+                              className={`p-3 rounded-md border ${classItem.color} cursor-pointer hover:brightness-95 transition-all`}
+                              onClick={() => handleClassClick(classItem)}
+                            >
+                              <div className="grid sm:grid-cols-[1fr,auto] gap-3">
+                                <div className="space-y-1">
+                                  <div className="font-medium">
+                                    {classItem.subjectName}
                                   </div>
-                                  <div className="flex items-center gap-3">
+                                  <div className="flex flex-wrap gap-3">
                                     <div className="flex items-center text-sm">
-                                      <Users className="h-3.5 w-3.5 mr-1.5 opacity-70" />
-                                      {classItem.studentCount || "N/A"} học sinh
+                                      <BookOpen className="h-3.5 w-3.5 mr-1.5 opacity-70" />
+                                      {classItem.classId}
+                                    </div>
+                                    <div className="flex items-center text-sm">
+                                      <MapPin className="h-3.5 w-3.5 mr-1.5 opacity-70" />
+                                      {classItem.roomId}
                                     </div>
                                   </div>
                                 </div>
-                                <div className="mt-2 pt-2 border-t text-sm flex items-center text-muted-foreground">
-                                  <Users className="h-3.5 w-3.5 mr-1.5" />
-                                  Giáo viên: {classItem.teacherName}
+                                <div className="flex items-center gap-3">
+                                  <div className="flex items-center text-sm">
+                                    <Users className="h-3.5 w-3.5 mr-1.5 opacity-70" />
+                                    {/* highlight-next-line */}
+                                    {t("classScheduleCalendar.studentCount", { count: classItem.studentCount || 0 })}
+                                  </div>
                                 </div>
                               </div>
-                            ))}
-                          </div>
+                              <div className="mt-2 pt-2 border-t text-sm flex items-center text-muted-foreground">
+                                <Users className="h-3.5 w-3.5 mr-1.5" />
+                                {/* highlight-next-line */}
+                                {t("classScheduleCalendar.details.teacherLabel")}{" "}{classItem.teacherName}
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      );
-                    })}
-                </div>
-              </CardContent>
+                      </div>
+                    );
+                  })}
+              </div>
+            </CardContent>
             </Card>
           );
         })}
 
+        {/* Điều kiện kiểm tra nếu không có lớp nào trong cả tuần (áp dụng cho List View) */}
         {!displayDates.some((day) => getClassesForDate(day).length > 0) && (
           <div className="text-center py-12 text-muted-foreground">
             <CalendarIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
-            <p>Không có lớp học nào trong tuần này</p>
+            {/* highlight-next-line */}
+            <p>{t("classScheduleCalendar.listView.noClassesThisWeek")}</p>
           </div>
         )}
       </div>
     );
   };
-
   return (
     <Card className="w-full">
       <CardHeader className="space-y-1">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <CardTitle>Lịch học</CardTitle>
+          <CardTitle>{/* Tiêu đề có thể được thêm ở đây */}</CardTitle>
           <div className="flex flex-wrap items-center gap-2">
             {" "}
             <Tabs
@@ -842,25 +841,27 @@ export default function ClassScheduleCalendar({
               className="w-fit"
             >
               <TabsList>
+                {/* highlight-start */}
                 <TabsTrigger value="day" className="text-xs px-2 sm:px-3">
-                  <span className="hidden sm:inline">Ngày</span>
+                  <span className="hidden sm:inline">{t("classScheduleCalendar.view.day")}</span>
                   <Calendar className="h-4 w-4 sm:hidden" />
                 </TabsTrigger>
                 <TabsTrigger value="week" className="text-xs px-2 sm:px-3">
-                  <span className="hidden sm:inline">Tuần</span>
+                  <span className="hidden sm:inline">{t("classScheduleCalendar.view.week")}</span>
                   <LayoutGrid className="h-4 w-4 sm:hidden" />
                 </TabsTrigger>
                 <TabsTrigger value="month" className="text-xs px-2 sm:px-3">
-                  <span className="hidden sm:inline">Tháng</span>
+                  <span className="hidden sm:inline">{t("classScheduleCalendar.view.month")}</span>
                   <CalendarIcon className="h-4 w-4 sm:hidden" />
                 </TabsTrigger>
                 <TabsTrigger value="list" className="text-xs px-2 sm:px-3">
-                  <span className="hidden sm:inline">Danh sách</span>
+                  <span className="hidden sm:inline">{t("classScheduleCalendar.view.list")}</span>
                   <List className="h-4 w-4 sm:hidden" />
                 </TabsTrigger>
+                {/* highlight-end */}
               </TabsList>
             </Tabs>
-            <div className="relative">
+             <div className="relative">
               <Button
                 variant="outline"
                 size="sm"
@@ -875,8 +876,8 @@ export default function ClassScheduleCalendar({
                 </span>
                 <span className="sm:hidden">{format(date, "dd/MM")}</span>
               </Button>
-
-              {calendarIsOpen && (
+              {/* Calendar popover */}
+               {calendarIsOpen && (
                 <div className="absolute z-50 mt-1 right-0 bg-background border rounded-md shadow-md">
                   <Calendar
                     mode="single"
@@ -895,7 +896,8 @@ export default function ClassScheduleCalendar({
             <div className="flex gap-1">
               <Button
                 variant="outline"
-                size="icon"                onClick={() => {
+                size="icon"
+                onClick={() => {
                   const newDate = new Date(date);
                   if (view === "day") newDate.setDate(newDate.getDate() - 1);
                   else if (view === "week")
@@ -907,21 +909,24 @@ export default function ClassScheduleCalendar({
                   handleDateChange(newDate);
                 }}
               >
-                <ChevronLeft className="h-4 w-4" />
+                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
-                size="sm"                onClick={() => {
+                size="sm"
+                onClick={() => {
                   const newDate = new Date();
                   handleDateChange(newDate);
                 }}
                 className="text-xs"
               >
-                Hôm nay
+                {/* highlight-next-line */}
+                {t("classScheduleCalendar.listView.todayBadge")}
               </Button>
               <Button
                 variant="outline"
-                size="icon"                onClick={() => {
+                size="icon"
+                onClick={() => {
                   const newDate = new Date(date);
                   if (view === "day") newDate.setDate(newDate.getDate() + 1);
                   else if (view === "week")
@@ -933,7 +938,7 @@ export default function ClassScheduleCalendar({
                   handleDateChange(newDate);
                 }}
               >
-                <ChevronRight className="h-4 w-4" />
+               <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -943,7 +948,8 @@ export default function ClassScheduleCalendar({
         {scheduledClasses.length === 0 ? (
           <div className="py-20 text-center text-muted-foreground">
             <CalendarIcon className="mx-auto h-10 w-10 mb-2 opacity-50" />
-            <p>Không có lịch học nào cho thời gian đã chọn</p>
+            {/* highlight-next-line */}
+            <p>{t("classScheduleCalendar.emptyState.noClassesForSelectedTime")}</p>
           </div>
         ) : view === "day" ? (
           renderDayView()
@@ -954,7 +960,6 @@ export default function ClassScheduleCalendar({
         ) : (
           renderListView()
         )}
-
         {/* Class Detail Dialog */}
         {selectedClass && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -964,7 +969,8 @@ export default function ClassScheduleCalendar({
                   {selectedClass.subjectName}
                 </DialogTitle>
                 <DialogDescription>
-                  Chi tiết lớp học {selectedClass.classId}
+                  {/* highlight-next-line */}
+                  {t("classScheduleCalendar.dialog.description", { classId: selectedClass.classId })}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
@@ -973,7 +979,8 @@ export default function ClassScheduleCalendar({
                     <BookOpen className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Môn học</p>
+                    {/* highlight-next-line */}
+                    <p className="text-sm text-muted-foreground">{t("classScheduleCalendar.dialog.subject")}</p>
                     <p className="font-medium">{selectedClass.subjectName}</p>
                   </div>
                 </div>
@@ -982,7 +989,8 @@ export default function ClassScheduleCalendar({
                     <Clock className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Thời gian</p>
+                    {/* highlight-next-line */}
+                    <p className="text-sm text-muted-foreground">{t("classScheduleCalendar.dialog.time")}</p>
                     <p className="font-medium">
                       {DAYS_OF_WEEK[selectedClass.day]},{" "}
                       {formatTime(selectedClass.startTime)} -{" "}
@@ -995,7 +1003,8 @@ export default function ClassScheduleCalendar({
                     <MapPin className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Phòng học</p>
+                    {/* highlight-next-line */}
+                    <p className="text-sm text-muted-foreground">{t("classScheduleCalendar.dialog.room")}</p>
                     <p className="font-medium">{selectedClass.roomId}</p>
                   </div>
                 </div>
@@ -1004,7 +1013,8 @@ export default function ClassScheduleCalendar({
                     <Users className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Giáo viên</p>
+                    {/* highlight-next-line */}
+                    <p className="text-sm text-muted-foreground">{t("classScheduleCalendar.dialog.teacher")}</p>
                     <p className="font-medium">{selectedClass.teacherName}</p>
                   </div>
                 </div>
@@ -1013,7 +1023,8 @@ export default function ClassScheduleCalendar({
                     <Link
                       href={`/dashboard/classrooms/${selectedClass.classId}`}
                     >
-                      Xem chi tiết lớp học
+                      {/* highlight-next-line */}
+                      {t("classScheduleCalendar.dialog.viewDetailsButton")}
                     </Link>
                   </Button>
                 </div>

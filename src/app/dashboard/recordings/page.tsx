@@ -9,6 +9,7 @@ import { RecordingSettingsDialog } from "@/components/recording-settings-dialog"
 import DashboardHeader from "@/components/dashboard-header";
 import { RecordingSettings } from "@/lib/api/classroom";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useTranslation } from "react-i18next";
 
 interface Recording {
   id: string;
@@ -21,6 +22,7 @@ recorder: MediaRecorder;
 
 // Wrapper component to ensure we only render the recording UI on the client side
 const RecordingComponent = () => {
+const { t } = useTranslation();
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [availableDevices, setAvailableDevices] = useState<MediaDeviceInfo[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -70,15 +72,14 @@ const RecordingComponent = () => {
     // Kiểm tra context bảo mật
     if (!isSecureContext && !isLocal) {
       setErrorMessage(
-        "MediaDevices API yêu cầu HTTPS hoặc localhost để hoạt động. " +
-          "Vui lòng truy cập trang web qua HTTPS hoặc localhost."
+       t('recording.error.https_required')
       );
       return;
     }
 
     // Kiểm tra sự tồn tại của API
     if (!navigator.mediaDevices) {
-      console.warn("MediaDevices API không khả dụng trong môi trường này");
+      console.warn(t('recording.error.api_unavailable_warning'));
 
       // Thử lại sau một khoảng thời gian ngắn (đôi khi API cần thời gian để khởi tạo)
       setTimeout(() => {
@@ -87,8 +88,7 @@ const RecordingComponent = () => {
           checkPermissionsAndDevices();
         } else {
           setErrorMessage(
-            "Trình duyệt của bạn không hỗ trợ hoặc chặn API MediaDevices. " +
-              "Vui lòng đảm bảo bạn đang sử dụng trình duyệt hiện đại và cho phép truy cập camera."
+          t('recording.error.api_unavailable_error')
           );
         }
       }, 500);
@@ -107,8 +107,8 @@ const RecordingComponent = () => {
 
             if (cameraPermission.state === "denied") {
               setErrorMessage(
-                "Bạn đã từ chối quyền truy cập camera. Vui lòng cấp quyền trong cài đặt trình duyệt để sử dụng tính năng này."
-              );
+                         t('recording.error.permission_denied')            
+                );
               return;
             }
 
@@ -123,14 +123,14 @@ const RecordingComponent = () => {
                 tempStream.getTracks().forEach((track) => track.stop());
               } catch (err) {
                 console.warn(
-                  "Không thể kích hoạt hộp thoại cấp quyền camera:",
+                  t('recording.error.permission_prompt_failed_warning'),
                   err
                 );
               }
             }
           } catch (permError) {
             console.warn(
-              "Permissions API không được hỗ trợ đầy đủ:",
+              t('recording.error.permissions_api_unsupported_warning'),
               permError
             );
             // API permissions không khả dụng, nhưng chúng ta vẫn có thể thử enumerateDevices
@@ -147,24 +147,24 @@ const RecordingComponent = () => {
 
           if (videoDevices.length === 0) {
             setErrorMessage(
-              "Không tìm thấy camera nào. Vui lòng đảm bảo camera được kết nối và hoạt động."
+              t('recording.error.no_camera_found')
             );
           }
         } catch (enumError) {
-          console.error("Lỗi khi liệt kê thiết bị:", enumError);
+          console.error(t('recording.error.enumerate_devices_error'), enumError);
           setErrorMessage(
-            "Không thể truy cập danh sách thiết bị. Hãy đảm bảo bạn đã cấp quyền truy cập camera."
+            t('recording.error.device_list_inaccessible')
           );
         }
       } catch (error) {
-        console.error("Lỗi khi kiểm tra quyền và thiết bị:", error);
-        setErrorMessage("Đã xảy ra lỗi khi kiểm tra quyền truy cập thiết bị.");
+        console.error(t('recording.error.check_permissions_error'), error);
+        setErrorMessage(t('recording.error.check_permissions_error'));
       }
     };
 
     // Thực hiện kiểm tra
     checkPermissionsAndDevices();
-  }, []);
+  }, [t]);
   const startNewRecording = async () => {
     // Bảo vệ chống lại server-side rendering
     if (typeof window === "undefined") {
@@ -177,8 +177,7 @@ const RecordingComponent = () => {
     // Kiểm tra API có khả dụng không
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setErrorMessage(
-        "Trình duyệt của bạn không hỗ trợ hoặc chặn API MediaDevices. " +
-          "Vui lòng đảm bảo bạn đang sử dụng trình duyệt hiện đại và cho phép truy cập camera."
+        t('recording.error.api_unavailable_error')
       );
       return;
     }
@@ -187,7 +186,7 @@ const RecordingComponent = () => {
       // Kiểm tra tính khả dụng của MediaRecorder
       if (typeof MediaRecorder === "undefined") {
         setErrorMessage(
-          "Trình duyệt của bạn không hỗ trợ MediaRecorder API. Vui lòng sử dụng trình duyệt hiện đại hơn."
+          t('recording.error.recorder_unsupported')
         );
         return;
       }      // Thiết lập điều kiện sử dụng media từ cài đặt người dùng
@@ -209,28 +208,28 @@ const RecordingComponent = () => {
       try {
         stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
       } catch (err: any) {
-        console.error("Lỗi khi truy cập thiết bị media:", err);
+        console.error(t('recording.error.media_access_error_log'), err);
 
         if (
           err.name === "NotAllowedError" ||
           err.name === "PermissionDeniedError"
         ) {
           setErrorMessage(
-            "Bạn đã từ chối quyền truy cập camera/microphone. Vui lòng cấp quyền trong cài đặt trình duyệt để sử dụng tính năng này."
+           t('recording.error.permission_denied_camera_mic')
           );
         } else if (
           err.name === "NotFoundError" ||
           err.name === "DevicesNotFoundError"
         ) {
           setErrorMessage(
-            "Không tìm thấy camera hoặc microphone trên thiết bị của bạn."
+            t(t('recording.error.device_not_found'))
           );
         } else if (
           err.name === "NotReadableError" ||
           err.name === "TrackStartError"
         ) {
           setErrorMessage(
-            "Camera hoặc microphone của bạn đang được sử dụng bởi ứng dụng khác."
+            t('recording.error.device_in_use')
           );
         } else if (err.name === "OverconstrainedError") {
           // Thử lại với ràng buộc ít hơn
@@ -238,14 +237,15 @@ const RecordingComponent = () => {
             stream = await navigator.mediaDevices.getUserMedia({ video: true });
           } catch (retryErr) {
             setErrorMessage(
-              "Thiết bị của bạn không thể đáp ứng các yêu cầu ghi hình. Vui lòng kiểm tra camera và microphone."
-            );
+             t('recording.error.overconstrained_error')      
+      );
             return;
           }
         } else {
           setErrorMessage(
-            `Không thể truy cập camera: ${err.message || "Lỗi không xác định"}`
-          );
+ t('recording.error.camera_access_failed', { 
+              message: err.message || t('recording.error.unknown_error') 
+            } )         );
         }
 
         if (!stream) return;
@@ -294,11 +294,12 @@ const RecordingComponent = () => {
       try {
         recorder = new MediaRecorder(stream, options);
       } catch (recorderErr: any) {
-        console.error("Lỗi khi tạo MediaRecorder:", recorderErr);
+        console.error(t('recording.error.create_recorder_error_log'), recorderErr);
         stream.getTracks().forEach((track) => track.stop());
         setErrorMessage(
-          `Không thể tạo bộ ghi: ${recorderErr.message || "Lỗi không xác định"}`
-        );
+ t('recording.error.create_recorder_failed', { 
+          message: recorderErr.message || t('recording.error.unknown_error')
+        })        );
         return;
       }
 
@@ -335,15 +336,15 @@ const RecordingComponent = () => {
             setRecordings(updatedRecordings);
           }
         } catch (blobErr) {
-          console.error("Lỗi khi tạo blob video:", blobErr);
-          setErrorMessage("Không thể xử lý video đã ghi.");
+        console.error(t('recording.error.create_blob_error_log'), blobErr);
+        setErrorMessage(t('recording.error.blob_creation_failed'));
         }
       };
 
       // Xử lý sự kiện lỗi từ recorder
       recorder.onerror = (event: any) => {
-        console.error("Lỗi trong quá trình ghi:", event);
-        setErrorMessage("Đã xảy ra lỗi trong quá trình ghi. Vui lòng thử lại.");
+        console.error(t('recording.error.recording_error_log'), event);
+      setErrorMessage(t('recording.error.recording_error'));
       };
 
       // Tạo đối tượng recording mới
@@ -364,10 +365,9 @@ const RecordingComponent = () => {
       recordingsRef.current = updatedRecordings;
       setRecordings(updatedRecordings);
     } catch (error: any) {
-      console.error("Lỗi không xác định khi bắt đầu ghi:", error);
+      console.error(t('recording.error.start_recording_unknown_error_log'), error);
       setErrorMessage(
-        error.message ||
-          "Không thể bắt đầu ghi hình. Đã xảy ra lỗi không xác định."
+        error.message || t('recording.error.start_recording_unknown_error')
       );
     }
   };
@@ -377,7 +377,7 @@ const RecordingComponent = () => {
     setErrorMessage(null);
 
     if (!navigator.mediaDevices || !(navigator.mediaDevices as any).getDisplayMedia) {
-      setErrorMessage("Trình duyệt của bạn không hỗ trợ ghi màn hình. Vui lòng sử dụng Chrome, Edge hoặc Firefox phiên bản mới nhất.");
+      setErrorMessage(t('recording.error.screen_unsupported'));
       return;
     }
 
@@ -395,9 +395,11 @@ const RecordingComponent = () => {
         });
       } catch (err: any) {
         if (err.name === "NotAllowedError") {
-          setErrorMessage("Bạn đã từ chối quyền ghi màn hình.");
+          setErrorMessage(t('recording.error.screen_permission_denied'));
         } else {
-          setErrorMessage("Không thể truy cập màn hình: " + (err.message || "Lỗi không xác định"));
+              t('recording.error.screen_access_failed', {
+              message: err.message || t('recording.error.unknown_error')
+            });
         }
         return;
       }
@@ -456,8 +458,9 @@ const RecordingComponent = () => {
             setRecordings(updatedRecordings);
           }
         } catch (blobErr) {
-          console.error("Lỗi khi tạo blob video:", blobErr);
-          setErrorMessage("Không thể xử lý video đã ghi.");
+           // Reusing key from previous step
+          console.error(t('recording.error.create_blob_error_log'), blobErr);
+          setErrorMessage(t('recording.error.blob_creation_failed'));
         }
       };
 
@@ -484,14 +487,15 @@ const RecordingComponent = () => {
       setRecordings(updatedRecordings);
 
     } catch (error: any) {
-      console.error("Lỗi khi bắt đầu ghi màn hình:", error);
-      setErrorMessage(error.message || "Không thể bắt đầu ghi màn hình. Đã xảy ra lỗi không xác định.");
+      console.error(t('recording.log.start_screen_recording_error'), error);
+      setErrorMessage(error.message || t('recording.error.start_screen_recording_failed'));
     }
-  };  const stopRecording = (recordingId: string) => {
+  }; 
+   const stopRecording = (recordingId: string) => {
     try {
       const recording = recordings.find((r) => r.id === recordingId);
       if (!recording) {
-        console.warn("Không tìm thấy bản ghi với ID:", recordingId);
+        console.warn(t('recording.log.recording_not_found_warning'), recordingId);
         return;
       }
 
@@ -500,7 +504,7 @@ const RecordingComponent = () => {
         try {
           recording.recorder.stop();
         } catch (stopError) {
-          console.error("Lỗi khi dừng recorder:", stopError);
+          console.error(t('recording.log.stop_recorder_error'), stopError);
         }
       }
 
@@ -511,9 +515,9 @@ const RecordingComponent = () => {
           recording.stream.getTracks().forEach((track) => {
             try {
               track.stop();
-              console.log("Đã dừng track:", track.kind);
+              console.log(t('recording.log.track_stopped', { kind: track.kind }));
             } catch (trackError) {
-              console.warn(`Lỗi khi dừng track ${track.kind}:`, trackError);
+              console.warn(t('recording.log.stop_track_error', { kind: track.kind }), trackError);
             }
           });
 
@@ -544,12 +548,11 @@ const RecordingComponent = () => {
         recordingsRef.current = updatedRecordings;
 
       } catch (tracksError) {
-        console.error("Lỗi khi dừng stream tracks:", tracksError);
+        console.error(t('recording.log.stop_stream_tracks_error'), tracksError);
       }
     } catch (error) {
-      console.error("Lỗi không xác định khi dừng ghi hình:", error);
-      setErrorMessage(
-        "Không thể dừng ghi hình do lỗi. Vui lòng thử lại hoặc tải lại trang."
+      console.error(t('recording.log.stop_recording_unknown_error'), error);
+      setErrorMessage(t('recording.error.stop_recording_failed')
       );
     }
   };
@@ -557,10 +560,12 @@ const RecordingComponent = () => {
   const downloadRecording = (recordingId: string) => {
     try {
       const recording = recordings.find((r) => r.id === recordingId);
-      if (recording && recording.videoURL) {
-        const filename = `buoi-hoc-${new Date()
-          .toISOString()
-          .slice(0, 10)}-${recordingId}.webm`;
+       if (recording && recording.videoURL) {
+        // Create filename from translation key
+        const filename = t("recording.download_filename", {
+          date: new Date().toISOString().slice(0, 10),
+          id: recordingId
+        });
 
         const a = document.createElement("a");
         a.href = recording.videoURL;
@@ -575,18 +580,18 @@ const RecordingComponent = () => {
         }, 100);
       }
     } catch (error) {
-      console.error("Lỗi khi tải xuống video:", error);
-      setErrorMessage("Không thể tải xuống video. Vui lòng thử lại.");
+      console.error(t("recording.log.download_error"), error);
+      setErrorMessage(t("recording.error.download_failed"));
     }
   };
   return (
     <div className="space-y-6">
       <DashboardHeader
-        title="Ghi hình buổi học"
-        description="Quản lý và ghi lại video buổi học từ webcam"
+        title={t("recording.page_title")}
+        description={t("recording.page_description")}
       />
 
-      {errorMessage && (
+       {errorMessage && (
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{errorMessage}</AlertDescription>
@@ -594,24 +599,27 @@ const RecordingComponent = () => {
       )}
 
       {/* Hướng dẫn quyền truy cập */}
-      <Alert className="mb-4 bg-blue-50 border-blue-200">
+        <Alert className="mb-4 bg-blue-50 border-blue-200">
         <AlertCircle className="h-4 w-4 text-blue-500" />
-        <AlertDescription className="text-blue-700">          <p>
-            <strong>Hướng dẫn sử dụng:</strong>
+        <AlertDescription className="text-blue-700">
+          <p>
+            <strong>{t('recording.instructions.title')}</strong>
           </p>
           <ol className="list-decimal pl-5 mt-2 space-y-1">
-            <li>Chọn chế độ ghi: Webcam hoặc Màn hình.</li>
-            <li>Cấp quyền truy cập camera/màn hình và micro khi trình duyệt yêu cầu.</li>
-            <li>Điều chỉnh cài đặt chất lượng video nếu cần.</li>
-            <li>Nhấn nút "Bắt đầu" để bắt đầu ghi.</li>
-            <li>Bạn có thể ghi nhiều video cùng lúc.</li>
-            <li>Nhấn "Dừng" để kết thúc ghi và xem lại video.</li>
-            <li>Nhấn "Tải xuống" để lưu video về máy.</li>
+            <li>{t('recording.instructions.step1')}</li>
+            <li>{t('recording.instructions.step2')}</li>
+            <li>{t('recording.instructions.step3')}</li>
+            <li>{t('recording.instructions.step4')}</li>
+            <li>{t('recording.instructions.step5')}</li>
+            <li>{t('recording.instructions.step6')}</li>
+            <li>{t('recording.instructions.step7')}</li>
           </ol>
           <p className="mt-2">
-            <strong>Lưu ý:</strong> 
-            - Tính năng này hoạt động tốt nhất trên Chrome, Edge hoặc Firefox phiên bản mới nhất.
-            - Khi ghi màn hình, bạn có thể chọn ghi toàn màn hình, một cửa sổ, hoặc một tab cụ thể.
+            <strong>{t('recording.instructions.note_title')}</strong>
+            <br/>
+            - {t('recording.instructions.note_1')}
+            <br/>
+            - {t('recording.instructions.note_2')}
           </p>
         </AlertDescription>
       </Alert>
@@ -619,12 +627,12 @@ const RecordingComponent = () => {
       {availableDevices.length > 0 && (
         <div className="mb-4">
           <p className="text-sm font-medium mb-1">
-            Thiết bị khả dụng ({availableDevices.length}):
-          </p>
+            {t('recording.available_devices', { count: availableDevices.length })}     
+      </p>
           <ul className="text-sm text-gray-600">
             {availableDevices.map((device, index) => (
               <li key={device.deviceId || index} className="truncate">
-                {device.label || `Camera ${index + 1}`}
+                {device.label || t('recording.camera_label', { index: index + 1 })}
               </li>
             ))}
           </ul>
@@ -633,22 +641,23 @@ const RecordingComponent = () => {
 
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">            <CardTitle>Danh sách video đang ghi</CardTitle>            <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between">           
+             <CardTitle>{t('recording.list_title')}</CardTitle>            <div className="flex items-center gap-4">
               <ToggleGroup type="single" value={recordingType} onValueChange={(value: "webcam" | "screen") => setRecordingType(value)} className="border rounded-lg">
                 <ToggleGroupItem value="webcam" className="px-4">
                   <Camera className="h-4 w-4 mr-2" />
-                  Webcam
+                  {t('recording.webcam')}
                 </ToggleGroupItem>
                 <ToggleGroupItem value="screen" className="px-4">
                   <Monitor className="h-4 w-4 mr-2" />
-                  Màn hình
+                  {t('recording.screen')}
                 </ToggleGroupItem>
               </ToggleGroup>
 
               <Button onClick={recordingType === "webcam" ? startNewRecording : startScreenRecording} disabled={!!errorMessage}>
-                <Video className="mr-2 h-4 w-4" />
-                {recordingType === "webcam" ? "Bắt đầu ghi webcam" : "Bắt đầu ghi màn hình"}
-              </Button>
+          <Video className="mr-2 h-4 w-4" />
+          {recordingType === "webcam" ? t('recording.start_webcam') : t('recording.start_screen')}
+        </Button>
               <RecordingSettingsDialog
                 settings={recordingSettings}
                 onSave={handleSaveSettings}
@@ -659,8 +668,7 @@ const RecordingComponent = () => {
         <CardContent>
           {recordings.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              Chưa có video nào được ghi. Nhấn nút "Bắt đầu ghi hình mới" để bắt
-              đầu.
+                      {t('recording.no_recordings')}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -681,7 +689,7 @@ const RecordingComponent = () => {
                           video
                             .play()
                             .catch((err) =>
-                              console.warn("Không thể phát video:", err)
+                              console.warn(t('recording.video_playback_warning'), err)
                             );
                         }
                       }}
@@ -693,13 +701,13 @@ const RecordingComponent = () => {
                     {recording.isRecording && (
                       <div className="absolute top-2 left-2 flex items-center gap-1 bg-red-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">
                         <span className="inline-block w-2 h-2 bg-white rounded-full"></span>
-                        Đang ghi
+                         {t('recording.status.recording_badge')}
                       </div>
                     )}
                   </div>
                   <div className="p-3 flex justify-between items-center">
                     <div className="text-sm">
-                      {recording.isRecording ? "Đang ghi..." : "Đã hoàn thành"}
+                {recording.isRecording ? t('recording.status.recording') : t('recording.status.completed')}
                     </div>
                     <div className="flex gap-2">
                       {recording.isRecording ? (
@@ -709,7 +717,7 @@ const RecordingComponent = () => {
                           onClick={() => stopRecording(recording.id)}
                         >
                           <StopCircle className="h-4 w-4 mr-1" />
-                          Dừng
+                           {t('recording.stop_button')}
                         </Button>
                       ) : (
                         <Button
@@ -718,7 +726,7 @@ const RecordingComponent = () => {
                           onClick={() => downloadRecording(recording.id)}
                         >
                           <PlayCircle className="h-4 w-4 mr-1" />
-                          Tải xuống
+                          {t('recording.download_button')}
                         </Button>
                       )}
                     </div>

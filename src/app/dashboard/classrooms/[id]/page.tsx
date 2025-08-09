@@ -50,6 +50,8 @@ import Link from "next/link";
 import DashboardHeader from "@/components/dashboard-header";
 import Loader from "@/components/loader";
 import { RecordingSettingsDialog } from "@/components/recording-settings-dialog";
+import { useTranslation } from "react-i18next";
+import { vi, enUS } from "date-fns/locale";
 
 interface DiaryEntry {
   id: string;
@@ -60,6 +62,8 @@ interface DiaryEntry {
 }
 
 export default function ClassroomDetailPage() {
+   const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language.startsWith('vi') ? vi : enUS;
   const params = useParams();
   const classId = typeof params.id === "string" ? params.id : Array.isArray(params.id) ? params.id[0] : "";
   const [attendance, setAttendance] = useState<Attendance[]>([]);
@@ -79,10 +83,10 @@ export default function ClassroomDetailPage() {
       setIsSubmitting(true);
       // Tạm thời chỉ lưu vào state, trong thực tế bạn sẽ gọi API để lưu
       setRecordingSettings(settings);
-      toast.success("Đã lưu cấu hình ghi hình thành công");
+      toast.success(t("classroomDetailPage.toasts.saveRecordingSettingsSuccess"));
     } catch (error) {
       console.error("Error saving recording settings:", error);
-      toast.error("Có lỗi xảy ra khi lưu cấu hình ghi hình");
+      toast.error(t("classroomDetailPage.toasts.saveRecordingSettingsError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -132,15 +136,13 @@ export default function ClassroomDetailPage() {
         }
       } catch (err) {
         if (isMounted) {
-          setError("Failed to load classroom data");
+          setError(t("classroomDetailPage.errors.loadFailed"));
           setAttendance([]);
           setIsLoading(false);
         }
       }
     };
-
     fetchData();
-
     // Cleanup function để tránh memory leaks và race conditions
     return () => {
       isMounted = false;
@@ -149,44 +151,26 @@ export default function ClassroomDetailPage() {
   // Format date for display
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    // Tạo formatter cho phần ngày tháng
-    const dateFormatter = new Intl.DateTimeFormat("vi-VN", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-
-    // Lấy chỉ ngày tháng, bỏ phần thời gian 00:00
-    return dateFormatter.format(date);
+    return new Intl.DateTimeFormat(i18n.language, {
+      weekday: "long", year: "numeric", month: "long", day: "numeric",
+    }).format(date);
   };
-  // Format time range
-  const formatTimeRange = (startTime: string, endTime: string): string => {
-    const formatTime = (time: string) => {
-      const [hours, minutes] = time.split(":");
-      if (hours === "00" && minutes === "00") return "";
-      return time.slice(0, 5);
-    };
 
+  // Format time range
+ const formatTimeRange = (startTime: string, endTime: string): string => {
+    const formatTime = (time: string) => time.slice(0, 5);
     const start = formatTime(startTime);
     const end = formatTime(endTime);
-
     return start && end ? `${start} - ${end}` : "";
   };
 
-  // Get day of week in Vietnamese
+  // --- Lấy dữ liệu từ file JSON ---
+const daysOfWeekData = t("classScheduleCalendar.daysOfWeek", { returnObjects: true });
+const DAYS_OF_WEEK: string[] = Array.isArray(daysOfWeekData) ? daysOfWeekData : [];
   const getDayOfWeek = (day: number): string => {
-    const days = [
-      "Chủ nhật",
-      "Thứ 2",
-      "Thứ 3",
-      "Thứ 4",
-      "Thứ 5",
-      "Thứ 6",
-      "Thứ 7",
-    ];
-    return days[day % 7];
+    return DAYS_OF_WEEK[day % 7] || '';
   };
+
 
   if (isLoading) {
     return (
@@ -197,11 +181,8 @@ export default function ClassroomDetailPage() {
   }
 
   if (error || attendance.length === 0) {
-    return (
-      <div className="rounded-md bg-red-50 p-4 text-sm text-red-500">
-        {error || "No attendance data found"}
-      </div>
-    );
+     return <div className="rounded-md bg-red-50 p-4 text-sm text-red-500">{error || t("classroomDetailPage.errors.noDataFound")}
+     </div>;
   }
 
   const currentClassData = attendance[0];
@@ -214,14 +195,14 @@ export default function ClassroomDetailPage() {
           className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
-          Back to Classrooms
+          {t("classroomDetailPage.backToList")}
         </Link>
       </div>
 
-      <DashboardHeader
-        title={currentClassData.classId}
-        description={currentClassData.subjectName}
-      />
+          <DashboardHeader 
+          title={currentClassData.classId} 
+          description={currentClassData.subjectName} />
+
 
       {/* Classroom Info Card */}
       <Card>
@@ -232,7 +213,7 @@ export default function ClassroomDetailPage() {
                 <Calendar className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-medium">Lịch học</p>
+                <p className="text-sm font-medium">{t("classroomDetailPage.infoCard.schedule")}</p>
                 <p className="text-sm text-gray-500">
                   {currentClassData.schoolShift &&
                   currentClassData.schoolShift.length > 0
@@ -242,7 +223,7 @@ export default function ClassroomDetailPage() {
                         currentClassData.schoolShift[0].startTime,
                         currentClassData.schoolShift[0].endTime
                       )
-                    : "N/A"}
+                    : t("common.notAvailable")}
                 </p>
               </div>
             </div>
@@ -251,9 +232,9 @@ export default function ClassroomDetailPage() {
                 <Clock className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-medium">Phòng học</p>
+                <p className="text-sm font-medium">{t("classroomDetailPage.infoCard.room")}</p>
                 <p className="text-sm text-gray-500">
-                  {currentClassData.roomId || "N/A"}
+                  {currentClassData.roomId ||t("common.notAvailable")}
                 </p>
               </div>
             </div>            
@@ -262,7 +243,7 @@ export default function ClassroomDetailPage() {
                 <Users className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-medium">Giáo viên</p>
+                <p className="text-sm font-medium">{t("classroomDetailPage.infoCard.teacher")}</p>
                 <p className="text-sm text-gray-500">
                   {currentClassData.staffName ? (
                     <Link 
@@ -272,8 +253,7 @@ export default function ClassroomDetailPage() {
                       {currentClassData.staffName}
                     </Link>
                   ) : (
-                    "N/A"
-                  )}
+                    (t("common.notAvailable"))                  )}
                 </p>
               </div>
             </div>
@@ -283,7 +263,7 @@ export default function ClassroomDetailPage() {
               </div>
               <div className="flex items-center gap-3">
                 <div>
-                  <p className="text-sm font-medium">Ghi hình</p>
+                  <p className="text-sm font-medium">{t("classroomDetailPage.infoCard.recording")}</p>
                   <RecordingSettingsDialog
                     settings={recordingSettings}
                     onSave={handleSaveRecordingSettings}
@@ -298,35 +278,35 @@ export default function ClassroomDetailPage() {
       {/* Tabs for Attendance and Diary */}
       <Tabs defaultValue="attendance" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="attendance">Điểm danh</TabsTrigger>
-          <TabsTrigger value="diary">Nhật ký lớp học</TabsTrigger>
+          <TabsTrigger value="attendance">{t("classroomDetailPage.tabs.attendance")}</TabsTrigger>
+          <TabsTrigger value="diary">{t("classroomDetailPage.tabs.diary")}</TabsTrigger>
         </TabsList>
 
         {/* Attendance Tab */}
         <TabsContent value="attendance" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Bản ghi chấm công</CardTitle>
+              <CardTitle>{t("classroomDetailPage.attendance.title")}</CardTitle>
               <CardDescription>
-                Xem và quản lý điểm danh lớp học
+                {t("classroomDetailPage.attendance.description")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {attendance.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  Không có bản ghi điểm danh nào
+                  {t("classroomDetailPage.attendance.noRecords")}
                 </div>
               ) : (
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Ngày</TableHead>
-                        <TableHead>Giờ học</TableHead>
-                        <TableHead>Phòng học</TableHead>
-                        <TableHead>Số học sinh</TableHead>
-                        <TableHead>Trạng thái</TableHead>
-                        <TableHead>Hành động</TableHead>
+                      <TableHead>{t("classroomDetailPage.attendance.table.date")}</TableHead>
+                      <TableHead>{t("classroomDetailPage.attendance.table.time")}</TableHead>
+                      <TableHead>{t("classroomDetailPage.attendance.table.room")}</TableHead>
+                      <TableHead>{t("classroomDetailPage.attendance.table.studentCount")}</TableHead>
+                      <TableHead>{t("classroomDetailPage.attendance.table.status")}</TableHead>
+                      <TableHead>{t("classroomDetailPage.attendance.table.actions")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -352,9 +332,9 @@ export default function ClassroomDetailPage() {
                             >
                               {record.isAttended
                                 ? record.attendanceDetail?.confirmed
-                                  ? "Đã xác nhận"
-                                  : "Đã điểm danh"
-                                : "Chưa điểm danh"}
+                                  ? t("classroomDetailPage.attendance.status.confirmed")
+                                : t("classroomDetailPage.attendance.status.attended")
+                              : t("classroomDetailPage.attendance.status.notAttended")}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -368,35 +348,35 @@ export default function ClassroomDetailPage() {
                                   }
                                 >
                                   <MessageSquare className="mr-2 h-4 w-4" />
-                                  Thêm ghi chú
+                                {t("classroomDetailPage.attendance.addNoteButton")}
                                 </Button>
                               </DialogTrigger>
                               <DialogContent className="sm:max-w-[500px]">
                                 <DialogHeader>
-                                  <DialogTitle>
-                                    Thêm ghi chú - {formatDate(record.date)}
-                                  </DialogTitle>
+                                     <DialogTitle>
+                                      {t("classroomDetailPage.attendance.dialog.title", { date: formatDate(record.date) })}
+                                     </DialogTitle>
                                   <DialogDescription>
-                                    Thêm ghi chú hoặc nhận xét về buổi học này
+                                  {t("classroomDetailPage.attendance.dialog.description")}
                                   </DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4 pt-4">
                                   <div className="grid gap-4">
                                     <div className="space-y-2">
-                                      <Label htmlFor="comment">Ghi chú</Label>
+                                      <Label htmlFor="comment">{t("classroomDetailPage.attendance.dialog.noteLabel")}</Label>
                                       <Input
                                         id="comment"
                                         value={commentText}
                                         onChange={(e) =>
                                           setCommentText(e.target.value)
                                         }
-                                        placeholder="Nhập ghi chú của bạn tại đây..."
+                                        placeholder={t("classroomDetailPage.attendance.dialog.placeholder")}
                                         className="min-h-[100px]"
                                       />
                                     </div>
                                     <div className="space-y-2">
                                       <Label htmlFor="attachments">
-                                        Đính kèm
+                                     {t("classroomDetailPage.attendance.dialog.attachmentsLabel")}
                                       </Label>
                                       <Input
                                         id="attachments"
@@ -412,86 +392,80 @@ export default function ClassroomDetailPage() {
                                       />
                                       {selectedFiles.length > 0 && (
                                         <div className="text-sm text-gray-500">
-                                          Đã chọn {selectedFiles.length} tệp
+                                          {t("classroomDetailPage.attendance.dialog.filesSelected", { count: selectedFiles.length })}
                                         </div>
                                       )}
                                     </div>
                                   </div>
-                                  <div className="flex justify-end gap-2">
-                                    <Button
-                                      type="submit"
-                                      onClick={async () => {
-                                        if (
-                                          !commentText.trim() ||
-                                          !selectedAttendance
-                                        )
-                                          return;
-                                        try {
-                                          setIsSubmitting(true);
-                                          await toast.promise(
-                                            classroomService.postComment({
-                                              attendanceId: selectedAttendance,
-                                              content: commentText,
-                                              files:
-                                                selectedFiles.length > 0
-                                                  ? selectedFiles
-                                                  : undefined,
-                                            }),
-                                            {
-                                              loading: "Đang thêm ghi chú...",
-                                              success: () => {
-                                                setCommentText("");
-                                                setSelectedFiles([]);
-                                                fetchAttendanceData();
-                                                return "Đã thêm ghi chú thành công";
-                                              },
-                                              error:
-                                                "Có lỗi xảy ra khi thêm ghi chú",
-                                            }
-                                          );
-                                        } catch (error) {
-                                          console.error(
-                                            "Error posting comment:",
-                                            error
-                                          );
-                                          toast.error(
-                                            "Không thể thêm ghi chú. Vui lòng thử lại sau."
-                                          );
-                                        } finally {
-                                          setIsSubmitting(false);
-                                        }
-                                      }}
-                                      disabled={
-                                        isSubmitting || !commentText.trim()
-                                      }
-                                    >
-                                      {isSubmitting
-                                        ? "Đang gửi..."
-                                        : "Gửi ghi chú"}
-                                    </Button>
-                                  </div>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+ <div className="flex justify-end gap-2">
+  <Button
+    type="submit"
+    onClick={async () => {
+      if (!commentText.trim() || !selectedAttendance) return;
+      try {
+        setIsSubmitting(true);
+        await toast.promise(
+          classroomService.postComment({
+            attendanceId: selectedAttendance,
+            content: commentText,
+            files:
+              selectedFiles.length > 0
+                ? selectedFiles
+                : undefined,
+          }),
+          {
+            // highlight-start
+            loading: t("classroomDetailPage.toasts.addingNoteLoading"),
+            success: () => {
+              setCommentText("");
+              setSelectedFiles([]);
+              fetchAttendanceData();
+              return t("classroomDetailPage.toasts.addNoteSuccess");
+            },
+            error: t("classroomDetailPage.toasts.addNoteError"),
+            // highlight-end
+          }
+        );
+      } catch (error) {
+        console.error("Error posting comment:", error);
+        // highlight-next-line
+        toast.error(t("classroomDetailPage.toasts.addNoteFallbackError"));
+      } finally {
+        setIsSubmitting(false);
+      }
+    }}
+    disabled={isSubmitting || !commentText.trim()}
+  >
+    {/* highlight-start */}
+    {isSubmitting
+      ? t("common.submitting")
+      : t("classroomDetailPage.attendance.dialog.submitButton")}
+    {/* highlight-end */}
+  </Button>
+</div>
+      </div>
+    </DialogContent>
+    </Dialog>
+   </TableCell>
+     </TableRow>
+  ))}
+ </TableBody>
+     </Table>
+         </div>
+     )}
+ </CardContent>
+     </Card>
+   </TabsContent>
 
         {/* Diary Tab */}
         <TabsContent value="diary" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Nhật ký lớp học</CardTitle>
-              <CardDescription>
-                Ghi lại các ghi chú, quan sát và tiến trình cho lớp học này
+              <CardTitle>{t("classroomDetailPage.diary.title")}</CardTitle>
+             <CardDescription>
+              {t("classroomDetailPage.diary.description")}
               </CardDescription>
+
             </CardHeader>
             <CardContent className="space-y-6">
               {/* New Diary Entry Form */}
@@ -499,17 +473,17 @@ export default function ClassroomDetailPage() {
                 <CardContent className="pt-6">
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="diary-content">Mục nhật ký mới</Label>
+                      <Label htmlFor="diary-content">{t("classroomDetailPage.diary.newEntryLabel")}</Label>
                       <Input
                         id="diary-content"
                         value={diaryContent}
                         onChange={(e) => setDiaryContent(e.target.value)}
-                        placeholder="Hôm nay lớp học như thế nào?"
+                        placeholder={t("classroomDetailPage.diary.placeholder")}
                         className="h-24"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="diary-attachments">Đính kèm</Label>
+                      <Label htmlFor="diary-attachments">{t("classroomDetailPage.attendance.dialog.attachmentsLabel")}</Label>
                       <Input
                         id="diary-attachments"
                         type="file"
@@ -522,7 +496,7 @@ export default function ClassroomDetailPage() {
                       />
                       {diaryFiles.length > 0 && (
                         <div className="text-sm text-gray-500">
-                          Đã chọn {diaryFiles.length} tệp
+                          {t("classroomDetailPage.attendance.dialog.filesSelected", { count: diaryFiles.length })}
                         </div>
                       )}
                     </div>
@@ -542,7 +516,7 @@ export default function ClassroomDetailPage() {
                                     : undefined,
                               }),
                               {
-                                loading: "Đang thêm mục nhật ký...",
+                                loading: t("classroomDetailPage.toasts.addingDiaryLoading"),
                                 success: () => {
                                   setDiaryContent("");
                                   setDiaryFiles([]);
@@ -551,28 +525,28 @@ export default function ClassroomDetailPage() {
                                       id: `diary${new Date().getTime()}`,
                                       date: new Date().toISOString(),
                                       content: diaryContent,
-                                      author: "Giáo viên",
+                                      author: t("common.teacher") ,
                                       attachments: [],
                                     },
                                     ...diaryEntries,
                                   ]);
-                                  return "Đã thêm mục nhật ký thành công";
-                                },
-                                error: "Có lỗi xảy ra khi thêm mục nhật ký",
+                                  return t("classroomDetailPage.toasts.addDiarySuccess");
+                                 },
+                                  error: t("classroomDetailPage.toasts.addDiaryError"),
                               }
                             );
                           } catch (error) {
                             console.error("Error posting diary:", error);
                             toast.error(
-                              "Không thể thêm mục nhật ký. Vui lòng thử lại sau."
-                            );
+                            t("classroomDetailPage.toasts.addDiaryFallbackError")                            );
                           } finally {
                             setIsSubmitting(false);
                           }
                         }}
                         disabled={isSubmitting || !diaryContent.trim()}
                       >
-                        {isSubmitting ? "Đang đăng..." : "Đăng mục nhật ký"}
+                        {isSubmitting ? t("classroomDetailPage.diary.posting") 
+                                      : t("classroomDetailPage.diary.submitButton")}
                       </Button>
                     </div>
                   </div>
@@ -583,7 +557,7 @@ export default function ClassroomDetailPage() {
               <div className="space-y-4">
                 {diaryEntries.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
-                    Chưa có mục nhật ký nào
+                  {t("classroomDetailPage.diary.noEntries")}
                   </div>
                 ) : (
                   diaryEntries.map((entry) => (
@@ -623,7 +597,7 @@ export default function ClassroomDetailPage() {
                                     className="inline-flex items-center gap-1 rounded bg-gray-100 px-2 py-1 text-xs"
                                   >
                                     <FileText className="h-3 w-3" />
-                                    <span>tệp-đính-kèm-{i + 1}</span>
+                                        <span>{t("classroomDetailPage.diary.attachmentFile", { index: i + 1 })}</span>
                                   </div>
                                 ))}
                               </div>
