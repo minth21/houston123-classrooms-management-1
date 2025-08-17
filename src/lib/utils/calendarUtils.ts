@@ -101,19 +101,6 @@ export const getDayClassGroups = (dayClasses: ScheduledClass[]) => {
   return groups;
 };
 
-export const isUpcoming = (classTime: string, dayOfWeek: number) => {
-  const now = new Date();
-  const currentDay = now.getDay();
-  const currentHour = now.getHours();
-  const classHour = parseInt(classTime.split(":")[0]);
-
-  if (dayOfWeek > currentDay) return "upcoming";
-  if (dayOfWeek < currentDay) return "past";
-  if (classHour > currentHour) return "upcoming";
-  if (classHour < currentHour) return "past";
-  return "current";
-};
-
 export const isDateInRange = (
   date: Date,
   startDate: Date | null,

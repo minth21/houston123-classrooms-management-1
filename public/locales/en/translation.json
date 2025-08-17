@@ -104,6 +104,11 @@
       "roomLabel": "Room:",
       "teacherLabel": "Teacher:"
     },
+    "status": {
+      "current": "In Progress",
+      "upcoming": "Upcoming",
+      "past": "Finished"
+    },
     "studentCount_one": "{{count}} student",
     "studentCount_other": "{{count}} students"
   },

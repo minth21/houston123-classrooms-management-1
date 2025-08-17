@@ -104,6 +104,11 @@
       "roomLabel": "Phòng:",
       "teacherLabel": "Giảng viên:"
     },
+    "status": {
+      "current": "Đang diễn ra",
+      "upcoming": "Sắp diễn ra",
+      "past": "Đã kết thúc"
+    },
     "studentCount_one": "{{count}} học sinh",
     "studentCount_other": "{{count}} học sinh"
   },

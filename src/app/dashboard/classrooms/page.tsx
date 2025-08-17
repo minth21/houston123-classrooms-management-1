@@ -45,6 +45,23 @@ export default function ClassroomsPage() {
     null
   );
   const [isTimeDialogOpen, setIsTimeDialogOpen] = useState(false);
+  const DEBUG = typeof window !== "undefined" && (window as any).__APP_DEBUG__ === true;
+
+  const parseISOToDate = (value?: string | null): Date | null => {
+    if (!value) return null;
+    if (/([zZ]|[+\-]\d{2}:?\d{2})$/.test(value)) {
+      const d = new Date(value);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    const [datePart, timePart] = value.split("T");
+    if (!datePart) return null;
+    const [y, m, d] = datePart.split("-").map(Number);
+    if (!y || !m || !d) return null;
+    if (!timePart) return new Date(y, m - 1, d, 0, 0, 0, 0);
+    const [hh, mm = "0", ss = "0"] = timePart.split(":");
+    return new Date(y, m - 1, d, Number(hh), Number(mm), Number(ss));
+  };
+
   // Load classrooms based on the selected branch and staff role
   const loadClassrooms = async () => {
     try {
@@ -56,8 +73,8 @@ export default function ClassroomsPage() {
         return;
       }
 
-      const data = await classroomService.getClassrooms();
-      const filteredData = data.filter((c) => c.teacherCode === staff.userId);
+  const data = await classroomService.getClassrooms();
+  const filteredData = data.filter((c) => c.teacherCode === staff.userId);
 
       setClassrooms(filteredData);
       setFilteredClassrooms(filteredData);
@@ -81,7 +98,7 @@ export default function ClassroomsPage() {
       const branch = localStorage.getItem("selectedBranch");
       const company = localStorage.getItem("selectedCompany");
       if (branch && company && staff) {
-        console.log("Loading classrooms with staff:", staff);
+  if (DEBUG) console.log("Loading classrooms with staff:", staff);
         setBranchSelected(true);
         loadClassrooms();
       }
@@ -112,14 +129,17 @@ export default function ClassroomsPage() {
         return schedules.some((s) => s.dayOfWeek === todayDayOfWeek);
       });
     } else if (tab === "upcoming") {
-      // Filter for upcoming classes (starting within the next 7 days)
+      // Upcoming = classes whose first startDate is in future (>= now) within next 7 days
+      // AND not already finished (finishDate >= now) and active
       const now = new Date();
-      const nextWeek = new Date();
-      nextWeek.setDate(now.getDate() + 7);
-
+      const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
       filtered = filtered.filter((classroom) => {
-        if (!classroom.startDate) return false;
-        const start = new Date(classroom.startDate);
+        if (!classroom.isActive) return false;
+        const start = parseISOToDate(classroom.startDate);
+        if (!start) return false;
+        // If finishDate exists and is before now -> exclude
+        const finish = parseISOToDate(classroom.finishDate);
+        if (finish && finish < now) return false;
         return start >= now && start <= nextWeek;
       });
     } else if (tab === "monday") {
@@ -147,6 +167,13 @@ export default function ClassroomsPage() {
         return schedules.some((s) => s.dayOfWeek === 0 || s.dayOfWeek === 6);
       });
     }
+
+    // Enforce global finishDate filtering for all tabs (remove classes already ended)
+    const now = new Date();
+    filtered = filtered.filter((c) => {
+      const finish = parseISOToDate(c.finishDate);
+      return !finish || finish >= now;
+    });
 
     setFilteredClassrooms(filtered);
   };

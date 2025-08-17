@@ -1,7 +1,7 @@
 export interface ClassroomMember {
   id: number;
-  userID: string; // duplicate field from API
-  userId: string; // keep both just in case backend returns either
+  userID: string;
+  userId: string; 
   classID: string;
   originalClassID: string | null;
   newTimeSlot: string | null;
@@ -12,8 +12,8 @@ export interface ClassroomMember {
   name: string;
   grade: string;
   phoneNumber: string;
-  isOfficial: number; // 1 official, 0 not
-  status: number; // 0 active? could be enum
+  isOfficial: number; 
+  status: number;
 }
 
 export interface ClassroomMemberResponse {

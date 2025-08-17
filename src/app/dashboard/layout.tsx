@@ -368,9 +368,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-background">
       {/* Header */}
       <header className="sticky top-0 z-30 bg-white dark:bg-card border-b shadow-sm">
-        <div className="px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            {/* Mobile menu button */}
+  <div className="px-4 h-16 flex flex-row flex-wrap items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-3 md:gap-4 mr-auto">
             <button
               className="md:hidden text-gray-500 hover:text-gray-700 focus:outline-none"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -384,8 +383,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
             {/* Desktop sidebar toggle */}
             <button
-              className="hidden md:flex text-gray-500 hover:text-gray-700 focus:outline-none"
+              className="hidden md:inline-flex text-gray-500 hover:text-gray-700 focus:outline-none"
               onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
+              aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               <Menu className="h-6 w-6" />
             </button>
@@ -407,18 +407,55 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </Link>
           </div>
 
-          <div className="flex items-center space-x-4">
-            {/* Language Switcher */}
+          <div className="flex items-center gap-2 md:gap-3 ml-auto">
+            {/* Inline current location selectors */}
+            <div className="hidden md:flex items-center gap-1.5 pr-2 border-r border-gray-200 dark:border-border/40 mr-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 leading-none">
+                {t('sidebar.current_location')}
+              </span>
+              <Select
+                disabled={isCompanyLoading || companies.length === 0}
+                value={selectedCompany || ''}
+                onValueChange={handleCompanySelect}
+              >
+                <SelectTrigger className="h-9 w-40 text-xs px-2">
+                  <SelectValue placeholder={t('sidebar.select_company') as string} />
+                </SelectTrigger>
+                <SelectContent>
+                  {companies.map((company) => (
+                    <SelectItem key={company._id} value={company._id} className="text-xs">
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                disabled={
+                  isCompanyLoading ||
+                  !selectedCompany ||
+                  branches.length === 0
+                }
+                value={selectedBranch || ''}
+                onValueChange={handleBranchSelect}
+              >
+                <SelectTrigger className="h-9 w-40 text-xs px-2">
+                  <SelectValue placeholder={t('sidebar.select_branch') as string} />
+                </SelectTrigger>
+                <SelectContent>
+                  {branches.map((branch) => (
+                    <SelectItem key={branch._id} value={branch.code} className="text-xs">
+                      {branch.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <LanguageSwitcher compact />
-            {/* Notifications */}
-            <button className="relative p-1 text-gray-500 hover:text-blue-600 focus:outline-none">
+            <button className="relative p-1 text-gray-500 hover:text-blue-600 focus:outline-none h-9 w-9 flex items-center justify-center rounded-md hover:bg-gray-100 dark:hover:bg-muted/30">
               <Bell className="h-5 w-5" />
-              <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
+              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500"></span>
             </button>
-            {/* Theme toggle */}
             <ThemeToggle />
-
-            {/* User menu */}
             <UserMenu />
           </div>
         </div>
@@ -438,76 +475,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </nav>
 
               {/* Company and Branch Selection */}
-              {!isSidebarCollapsed ? (
-                <div className="mt-6 border-t pt-4">
-                  <h3 className="text-xs uppercase font-semibold text-gray-500 mb-3 px-3">
-                    {t('sidebar.current_location')}
-                  </h3>
-
-                  <div className="space-y-3 px-1">
-                    {/* Company Select */}
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-2 px-2 text-xs text-gray-600">
-                        <Building2 className="h-3.5 w-3.5" />
-                        <span>{t('sidebar.company')}</span>
-                      </div>
-                      <Select
-                        disabled={isCompanyLoading || companies.length === 0}
-                        value={selectedCompany || ""}
-                        onValueChange={handleCompanySelect}
-                      >
-                        <SelectTrigger className="w-full text-xs h-8">
-                          <SelectValue placeholder={t('sidebar.select_company') as string} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {companies.map((company) => (
-                            <SelectItem key={company._id} value={company._id}>
-                              {company.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Branch Select */}
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-2 px-2 text-xs text-gray-600">
-                        <MapPin className="h-3.5 w-3.5" />
-                        <span>{t('sidebar.branch')}</span>
-                      </div>
-                      <Select
-                        disabled={
-                          isCompanyLoading ||
-                          !selectedCompany ||
-                          branches.length === 0
-                        }
-                        value={selectedBranch || ""}
-                        onValueChange={handleBranchSelect}
-                      >
-                        <SelectTrigger className="w-full text-xs h-8">
-                          <SelectValue placeholder={t('sidebar.select_branch') as string} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {branches.map((branch) => (
-                            <SelectItem key={branch._id} value={branch.code}>
-                              {branch.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-6 border-t pt-4 px-3">
-                  <div className="flex justify-center">
-                    <Building2 className="h-5 w-5 text-gray-500" />
-                  </div>
-                  <div className="flex justify-center mt-4">
-                    <MapPin className="h-5 w-5 text-gray-500" />
-                  </div>
-                </div>
-              )}
             </div>
           </ScrollArea>
         </aside>

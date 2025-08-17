@@ -10,6 +10,9 @@ export interface ScheduledClass {
   color: string;
   studentCount?: number;
   status?: "upcoming" | "past" | "current";
+  dateISO?: string;
+  startDateTimeISO?: string;
+  endDateTimeISO?: string;
 }
 
 export interface ValidSchedule {

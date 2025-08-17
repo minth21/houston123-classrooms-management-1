@@ -5,7 +5,6 @@ import i18n from '@/lib/i18n';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Globe2 } from 'lucide-react';
 
-// A styled language switcher consistent with existing UI components
 export default function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
   const { t } = useTranslation();
   const [lang, setLang] = useState(i18n.language || 'en');

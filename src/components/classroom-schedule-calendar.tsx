@@ -33,24 +33,7 @@ import { DayViewCalendar } from "./calendar/DayViewCalendar";
 import { WeekViewCalendar } from "./calendar/WeekViewCalendar";
 import { MonthViewCalendar } from "./calendar/MonthViewCalendar";
 import { ListViewCalendar } from "./calendar/ListViewCalendar";
-import { getCombinedSchedules, isUpcoming } from "@/lib/utils/calendarUtils";
-
-// Days of week in Vietnamese
-const DAYS_OF_WEEK = [
-  "Chủ nhật",
-  "Thứ 2",
-  "Thứ 3",
-  "Thứ 4",
-  "Thứ 5",
-  "Thứ 6",
-  "Thứ 7",
-];
-
-// Day abbreviations in Vietnamese
-const DAYS_SHORT = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
-
-// Hour slots for the schedule (5AM to 10PM)
-const HOURS = Array.from({ length: 18 }, (_, i) => i + 5);
+import { getCombinedSchedules } from "@/lib/utils/calendarUtils";
 
 interface ClassScheduleCalendarProps {
   classrooms: Classroom[];
@@ -80,7 +63,7 @@ export default function ClassScheduleCalendar({
   const [autoTransition, setAutoTransition] = useState(false);
   const { staff, loading: staffLoading } = useStaff();
 
-  // Enhanced color palette with better contrast and more distinct colors
+  // Color palette
   const colors = [
     "bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200",
     "bg-purple-100 text-purple-800 border-purple-300 hover:bg-purple-200",
@@ -94,44 +77,48 @@ export default function ClassScheduleCalendar({
     "bg-lime-100 text-lime-800 border-lime-300 hover:bg-lime-200",
   ];
 
-  // Handle date change with callback
+  const truncateDate = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+
+  // Handlers
   const handleDateChange = (newDate: Date) => {
     const updatedDate = new Date(newDate);
     setDate(updatedDate);
-
-    // Trigger the callback to allow parent component to refresh data
     onDateChange?.(updatedDate);
-
-    // Clear and re-process schedules immediately when date changes
     setSelectedClass(null);
-    setDisplayDates([]);
-    if (!staffLoading && classrooms) {
-      processSchedules(classrooms);
-    }
   };
 
-  // Handle view change with callback
   const handleViewChange = (newView: CalendarView) => {
     setView(newView);
     onViewChange?.(newView);
-  }; // Process classrooms into scheduled classes
-  const processSchedules = (classroomsToProcess: Classroom[]) => {
-    const subjectColorMap = new Map();
-    const processed: ScheduledClass[] = [];
+  };
 
-    console.log("Processing classrooms:", classroomsToProcess.length);
-
+  // Build concrete session instances for schedules inside range
+  const generateSessionInstances = (
+    classroomsToProcess: Classroom[],
+    rangeStart: Date,
+    rangeEnd: Date
+  ) => {
+    const subjectColorMap = new Map<string, string>();
+    const sessions: ScheduledClass[] = [];
+    const startDay = truncateDate(rangeStart);
+    const endDay = new Date(
+      rangeEnd.getFullYear(),
+      rangeEnd.getMonth(),
+      rangeEnd.getDate(),
+      23,
+      59,
+      59,
+      999
+    );
+    const dayMs = 24 * 60 * 60 * 1000;
+    const now = new Date();
+    const dateCache: Date[] = [];
+    for (let t = startDay.getTime(); t <= endDay.getTime(); t += dayMs) {
+      dateCache.push(new Date(t));
+    }
     classroomsToProcess.forEach((classroom) => {
-      console.log("Processing classroom:", {
-        classID: classroom.classID,
-        schedule: classroom.schedule,
-        schoolShift: classroom.schoolShift,
-        isActive: classroom.isActive,
-        teacherCode: classroom.teacherCode,
-        supporter: classroom.supporter,
-      });
-
-      // Check if user has access to this classroom
+      // Access control
       if (
         !(
           showAllClasses ||
@@ -142,39 +129,37 @@ export default function ClassScheduleCalendar({
                 classroom.supporter.includes(staff?.userId))))
         )
       ) {
-        console.log(
-          "Skipping classroom due to access control:",
-          classroom.classID
-        );
         return;
       }
-
-      // Skip inactive classes
-      if (classroom.isActive === false) {
-        console.log("Skipping inactive classroom:", classroom.classID);
-        return;
-      }
-
-      // Get all valid schedules for this classroom
+      if (classroom.isActive === false) return;
       const validSchedules = getCombinedSchedules(classroom);
-      console.log(
-        "Valid schedules for",
-        classroom.classID,
-        ":",
-        validSchedules
-      );
-
-      if (validSchedules.length > 0) {
-        // Assign a consistent color based on subject name
-        let color = subjectColorMap.get(classroom.subjectName);
-        if (!color) {
-          color = colors[subjectColorMap.size % colors.length];
-          subjectColorMap.set(classroom.subjectName, color);
-        }
-        validSchedules.forEach((schedule, index) => {
-          const status = isUpcoming(schedule.beginTime, schedule.dayOfWeek);
-          const processedClass: ScheduledClass = {
-            id: `${classroom.classID}-${index}-${schedule.type}`,
+      if (!validSchedules.length) return;
+      let color = subjectColorMap.get(classroom.subjectName);
+      if (!color) {
+        color = colors[subjectColorMap.size % colors.length];
+        subjectColorMap.set(classroom.subjectName, color);
+      }
+      validSchedules.forEach((schedule, schedIndex) => {
+        dateCache.forEach((d) => {
+          if (d.getDay() !== schedule.dayOfWeek) return;
+          if (
+            (schedule.validFrom && d < truncateDate(schedule.validFrom)) ||
+            (schedule.validTo && d > truncateDate(schedule.validTo))
+          )
+            return;
+          const [sHour, sMin = "0"] = schedule.beginTime.split(":");
+            const [eHour, eMin = "0"] = schedule.finishTime.split(":");
+          const startDateTime = new Date(d);
+          startDateTime.setHours(parseInt(sHour), parseInt(sMin), 0, 0);
+          const endDateTime = new Date(d);
+          endDateTime.setHours(parseInt(eHour), parseInt(eMin), 0, 0);
+          let status: "past" | "current" | "upcoming" = "upcoming";
+          if (endDateTime < now) status = "past";
+          else if (startDateTime <= now && endDateTime >= now) status = "current";
+          const dateISO = d.toISOString().slice(0, 10);
+          const sessionId = `${classroom.classID}-${schedIndex}-${dateISO}`;
+          sessions.push({
+            id: sessionId,
             classId: classroom.classID,
             subjectName: classroom.subjectName,
             roomId: schedule.classRoomCode || "N/A",
@@ -184,181 +169,55 @@ export default function ClassScheduleCalendar({
             day: schedule.dayOfWeek,
             color,
             studentCount: classroom.studentNumber ?? undefined,
-            status: status as "upcoming" | "past" | "current",
-          };
-          console.log("Adding processed class:", processedClass);
-          processed.push(processedClass);
+            status,
+            dateISO,
+            startDateTimeISO: startDateTime.toISOString(),
+            endDateTimeISO: endDateTime.toISOString(),
+          });
         });
-      }
+      });
     });
-    console.log("Total processed classes:", processed.length);
-
-    // Additional check for duplicates at the end
-    const duplicateCheck = new Map();
-    processed.forEach((cls) => {
-      const key = `${cls.classId}-${cls.day}-${cls.startTime}-${cls.endTime}`;
-      if (duplicateCheck.has(key)) {
-        console.warn(
-          "Duplicate class found:",
-          cls,
-          "Original:",
-          duplicateCheck.get(key)
-        );
-      } else {
-        duplicateCheck.set(key, cls);
-      }
-    });
-
-    return processed;
+    return sessions;
   };
 
-  // Memoize the processed schedules
+  // Generate concrete sessions for active view/date
   const processedSchedules = useMemo(() => {
-    if (!staffLoading && classrooms) {
-      return processSchedules(classrooms);
+    if (staffLoading || !classrooms) return [];
+    let rangeStart = new Date(date);
+    let rangeEnd = new Date(date);
+    if (view === "week") {
+      rangeStart = new Date(date);
+      rangeStart.setDate(date.getDate() - date.getDay());
+      rangeEnd = new Date(rangeStart);
+      rangeEnd.setDate(rangeStart.getDate() + 6);
+    } else if (view === "month") {
+      rangeStart = new Date(date.getFullYear(), date.getMonth(), 1);
+      rangeEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      const pre = rangeStart.getDay();
+      rangeStart.setDate(rangeStart.getDate() - pre);
+      const post = 6 - rangeEnd.getDay();
+      rangeEnd.setDate(rangeEnd.getDate() + post);
+    } else if (view === "list") {
+      rangeStart = new Date(date);
+      rangeStart.setDate(rangeStart.getDate() - 30);
+      rangeEnd = new Date(date);
+      rangeEnd.setDate(rangeEnd.getDate() + 30);
     }
-    return [];
-  }, [classrooms, staff, staffLoading, showAllClasses]);
-  // Filter schedules by date range based on current view
+    return generateSessionInstances(classrooms, rangeStart, rangeEnd);
+  }, [classrooms, staff, staffLoading, showAllClasses, view, date]);
+
   const scheduledClasses = useMemo(() => {
-    console.log(
-      "Filtering schedules. View:",
-      view,
-      "Date:",
-      date,
-      "Total schedules:",
-      processedSchedules.length
-    );
-
-    // For different views, we need different date ranges
-    let startDate: Date, endDate: Date;
-
-    switch (view) {
-      case "day":
-        startDate = new Date(date);
-        endDate = new Date(date);
-        break;
-      case "week":
-        // Get start of week (Sunday)
-        startDate = new Date(date);
-        startDate.setDate(date.getDate() - date.getDay());
-        // Get end of week (Saturday)
-        endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 6);
-        break;
-      case "month":
-        // For month view, we need to show all days visible in the calendar grid
-        // This includes days from previous and next month to fill the grid
-        const firstOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-        const firstDayOfWeek = firstOfMonth.getDay(); // 0 = Sunday
-
-        // Start from the Sunday of the week containing the first day of month
-        startDate = new Date(firstOfMonth);
-        startDate.setDate(1 - firstDayOfWeek);
-
-        // End at the Saturday of the week containing the last day of month
-        const lastOfMonth = new Date(
-          date.getFullYear(),
-          date.getMonth() + 1,
-          0
-        );
-        endDate = new Date(lastOfMonth);
-        const remainingDays = 6 - lastOfMonth.getDay();
-        endDate.setDate(lastOfMonth.getDate() + remainingDays);
-        break;
-      case "list":
-        // For list view, show all classes (or a reasonable range)
-        startDate = new Date(date);
-        startDate.setDate(date.getDate() - 30); // Show 30 days before
-        endDate = new Date(date);
-        endDate.setDate(date.getDate() + 30); // Show 30 days after
-        break;
-      default:
-        startDate = new Date(date);
-        endDate = new Date(date);
+    if (view === "day") {
+      const targetISO = date.toISOString().slice(0, 10);
+      return processedSchedules.filter((s) => s.dateISO === targetISO);
     }
-
-    console.log("Date range:", { startDate, endDate, view });
-    const filteredClasses = processedSchedules.filter((classItem) => {
-      const targetDay = classItem.day; // 0=Sunday, 1=Monday, etc.
-
-      // Calculate the number of days in our range
-      const rangeDays =
-        Math.ceil(
-          (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-        ) + 1;
-
-      console.log(
-        `Checking class ${classItem.classId} (day ${targetDay}) against range ${rangeDays} days`
-      );
-
-      // Check if any day in the range matches the target day of week
-      if (rangeDays >= 7) {
-        // Range spans a full week or more, so it definitely includes this day
-        console.log(
-          "Class",
-          classItem.classId,
-          "day",
-          targetDay,
-          "included (range >= 7 days)"
-        );
-        return true;
-      }
-
-      // For shorter ranges (like day view or partial week)
-      const startDay = startDate.getDay();
-      const endDay = endDate.getDay();
-
-      let includesDay = false;
-
-      if (rangeDays === 1) {
-        // Single day view - only include if target day matches exactly
-        includesDay = targetDay === startDay;
-      } else if (startDay <= endDay) {
-        // Range doesn't wrap around the week
-        includesDay = targetDay >= startDay && targetDay <= endDay;
-      } else {
-        // Range wraps around the week (e.g., Saturday to Monday)
-        includesDay = targetDay >= startDay || targetDay <= endDay;
-      }
-
-      if (includesDay) {
-        console.log(
-          "Class",
-          classItem.classId,
-          "day",
-          targetDay,
-          "found in range",
-          startDay,
-          "to",
-          endDay,
-          `(${rangeDays} days)`
-        );
-      } else {
-        console.log(
-          "Class",
-          classItem.classId,
-          "day",
-          targetDay,
-          "NOT in range",
-          startDay,
-          "to",
-          endDay,
-          `(${rangeDays} days)`
-        );
-      }
-
-      return includesDay;
-    });
-
-    console.log("Filtered classes for display:", filteredClasses.length);
-    return filteredClasses;
+    return processedSchedules;
   }, [processedSchedules, date, view]);
 
-  // Update display dates when view or date changes
   useEffect(() => {
     setDisplayDates(getDisplayDates());
   }, [view, date]);
+
 
   // Handle auto-transition
   useEffect(() => {

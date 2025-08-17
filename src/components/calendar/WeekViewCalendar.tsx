@@ -1,4 +1,7 @@
+"use client";
+
 import { ScheduledClass } from "@/types/calendar";
+import { useTranslation } from "react-i18next";
 import {
   DAYS_SHORT,
   HOURS,
@@ -25,55 +28,88 @@ export function WeekViewCalendar({
   scheduledClasses,
   onClassClick,
 }: WeekViewCalendarProps) {
-  const doClassesOverlap = (a: ScheduledClass, b: ScheduledClass) => {
-    const [aStartHour, aStartMin] = a.startTime.split(":").map(Number);
-    const [aEndHour, aEndMin] = a.endTime.split(":").map(Number);
-    const [bStartHour, bStartMin] = b.startTime.split(":").map(Number);
-    const [bEndHour, bEndMin] = b.endTime.split(":").map(Number);
-
-    const aStartMinutes = aStartHour * 60 + (aStartMin || 0);
-    const aEndMinutes = aEndHour * 60 + (aEndMin || 0);
-    const bStartMinutes = bStartHour * 60 + (bStartMin || 0);
-    const bEndMinutes = bEndHour * 60 + (bEndMin || 0);
-
-    return aStartMinutes < bEndMinutes && aEndMinutes > bStartMinutes;
+  const { t } = useTranslation();
+  const toMinutes = (time: string) => {
+    const [h, m = "0"] = time.split(":");
+    return Number(h) * 60 + Number(m);
   };
+  const overlaps = (a: ScheduledClass, b: ScheduledClass) =>
+    toMinutes(a.startTime) < toMinutes(b.endTime) &&
+    toMinutes(a.endTime) > toMinutes(b.startTime);
 
-  const getOverlappingClasses = (
-    classItem: ScheduledClass,
-    dayClasses: ScheduledClass[]
-  ) => {
-    return dayClasses.filter(
-      (otherClass) =>
-        otherClass.id !== classItem.id &&
-        doClassesOverlap(classItem, otherClass)
-    );
-  };
-
-  const getClassWidth = (
-    classItem: ScheduledClass,
-    dayClasses: ScheduledClass[]
-  ) => {
-    const overlappingClasses = getOverlappingClasses(classItem, dayClasses);
-    const totalOverlapping = overlappingClasses.length + 1;
-    return `${100 / totalOverlapping}%`;
-  };
-  const getClassLeft = (
-    classItem: ScheduledClass,
-    dayClasses: ScheduledClass[]
-  ) => {
-    const overlappingClasses = getOverlappingClasses(classItem, dayClasses);
-    const totalOverlapping = overlappingClasses.length + 1;
-
-    // Sort overlapping classes by start time to determine order
-    const allOverlapping = [classItem, ...overlappingClasses].sort((a, b) => {
-      return a.startTime.localeCompare(b.startTime);
+  const layoutClusters = (classes: ScheduledClass[]) => {
+    const events = [...classes].sort((a, b) => {
+      const s = toMinutes(a.startTime) - toMinutes(b.startTime);
+      if (s !== 0) return s;
+      return toMinutes(b.endTime) - toMinutes(a.endTime);
+    });
+    const clusters: ScheduledClass[][] = [];
+    events.forEach((ev) => {
+      let target: ScheduledClass[] | null = null;
+      for (const c of clusters) {
+        if (c.some((e) => overlaps(e, ev))) {
+          target = c;
+          break;
+        }
+      }
+      if (target) target.push(ev);
+      else clusters.push([ev]);
     });
 
-    const index = allOverlapping.findIndex((cls) => cls.id === classItem.id);
-    const leftPercent = (index * 100) / totalOverlapping;
+    const meta: Record<string, { leftPct: number; widthPct: number }>[] = [];
+    const clusterMetas: Record<string, { leftPct: number; widthPct: number }> = {};
 
-    return `${leftPercent}%`;
+    clusters.forEach((cluster) => {
+      const cols: ScheduledClass[][] = [];
+      const baseCol: Record<string, number> = {};
+      cluster.forEach((ev) => {
+        let col = 0;
+        while (true) {
+          const colEvents = cols[col];
+          if (!colEvents) {
+            cols[col] = [ev];
+            baseCol[ev.id] = col;
+            break;
+          }
+            if (colEvents.every((e) => !overlaps(e, ev))) {
+              colEvents.push(ev);
+              baseCol[ev.id] = col;
+              break;
+            }
+          col++;
+        }
+      });
+      const total = cols.length;
+      const span: Record<string, number> = {};
+      cluster.forEach((ev) => {
+        const startCol = baseCol[ev.id];
+        let maxSpan = 1;
+        for (let next = startCol + 1; next < total; next++) {
+          const conflict = cols[next].some((other) => overlaps(other, ev));
+          if (conflict) break;
+          maxSpan++;
+        }
+        span[ev.id] = maxSpan;
+      });
+      cluster.forEach((ev) => {
+        const right = baseCol[ev.id] + span[ev.id] - 1;
+        cluster.forEach((other) => {
+          if (other === ev) return;
+          if (!overlaps(ev, other)) return;
+          const oCol = baseCol[other.id];
+          if (oCol > baseCol[ev.id] && oCol <= right) {
+            span[ev.id] = Math.min(span[ev.id], oCol - baseCol[ev.id]);
+          }
+        });
+      });
+      cluster.forEach((ev) => {
+        const colWidth = 100 / total;
+        const leftPct = baseCol[ev.id] * colWidth;
+        const widthPct = colWidth * span[ev.id];
+        clusterMetas[ev.id] = { leftPct, widthPct };
+      });
+    });
+    return clusterMetas;
   };
 
   return (
@@ -109,23 +145,12 @@ export function WeekViewCalendar({
           <div className="ml-16 grid grid-cols-7">
             {" "}
             {displayDates.map((date, dayIndex) => {
-              const allDayClasses = scheduledClasses.filter(
-                (classItem) => classItem.day === date.getDay()
+              const dateISO = date.toISOString().slice(0, 10);
+              // Only classes instantiated for this exact date
+              const dayClasses = scheduledClasses.filter(
+                (c) => c.dateISO === dateISO
               );
-
-              // Deduplicate classes based on classId, startTime, and endTime
-              const dayClasses = allDayClasses.filter(
-                (classItem, index, array) => {
-                  return (
-                    array.findIndex(
-                      (c) =>
-                        c.classId === classItem.classId &&
-                        c.startTime === classItem.startTime &&
-                        c.endTime === classItem.endTime
-                    ) === index
-                  );
-                }
-              );
+              const clusterMeta = layoutClusters(dayClasses);
 
               return (
                 <div
@@ -138,13 +163,11 @@ export function WeekViewCalendar({
                   ))}{" "}
                   {/* Classes */}
                   {dayClasses.map((classItem) => {
-                    const duration = getClassTimePeriod(
-                      classItem.startTime,
-                      classItem.endTime
-                    );
+                    const duration = getClassTimePeriod(classItem.startTime, classItem.endTime);
                     const topPosition = getClassPosition(classItem.startTime);
-                    const width = getClassWidth(classItem, dayClasses);
-                    const left = getClassLeft(classItem, dayClasses);
+                    const info = clusterMeta[classItem.id];
+                    const left = `${info.leftPct}%`;
+                    const width = `${info.widthPct}%`;
 
                     return (
                       <TooltipProvider key={classItem.id}>
@@ -164,9 +187,23 @@ export function WeekViewCalendar({
                               <div className="font-medium">
                                 {classItem.subjectName}
                               </div>
-                              <div className="text-[10px]">
-                                {formatTime(classItem.startTime)} -{" "}
-                                {formatTime(classItem.endTime)}
+                              <div className="text-[10px] flex justify-between items-center gap-1">
+                                <span>
+                                  {formatTime(classItem.startTime)} - {formatTime(classItem.endTime)}
+                                </span>
+                                {classItem.status && (
+                                  <span
+                                    className="ml-1 font-semibold capitalize"
+                                    aria-label={t(`classScheduleCalendar.status.${classItem.status}`)}
+                                    title={t(`classScheduleCalendar.status.${classItem.status}`)}
+                                  >
+                                    {classItem.status === "current"
+                                      ? "•"
+                                      : classItem.status === "upcoming"
+                                      ? "→"
+                                      : "✓"}
+                                  </span>
+                                )}
                               </div>
                               <div className="text-[10px]">
                                 {classItem.roomId}
