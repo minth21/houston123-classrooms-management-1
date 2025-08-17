@@ -2,6 +2,7 @@ import { ScheduledClass } from "@/types/calendar";
 import { DAYS_SHORT, formatTime } from "@/lib/utils/calendarUtils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "react-i18next";
 
 interface ListViewCalendarProps {
   scheduledClasses: ScheduledClass[];
@@ -12,6 +13,7 @@ export function ListViewCalendar({
   scheduledClasses,
   onClassClick,
 }: ListViewCalendarProps) {
+  const { t } = useTranslation();
   const uniqueClasses = scheduledClasses.filter((classItem, index, array) => {
     return (
       array.findIndex(
@@ -35,11 +37,11 @@ export function ListViewCalendar({
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="grid grid-cols-5 border-b p-2 font-semibold">
-        <div>Môn học</div>
-        <div>Thời gian</div>
-        <div>Phòng</div>
-        <div>Giáo viên</div>
-        <div>Trạng thái</div>
+  <div>{t('listViewCalendar.headers.subject')}</div>
+  <div>{t('listViewCalendar.headers.time')}</div>
+  <div>{t('listViewCalendar.headers.room')}</div>
+  <div>{t('listViewCalendar.headers.teacher')}</div>
+  <div>{t('listViewCalendar.headers.status')}</div>
       </div>
 
       {/* List of classes */}
@@ -71,11 +73,11 @@ export function ListViewCalendar({
                       : "outline"
                   }
                 >
-                  {classItem.status === "current"
-                    ? "Đang diễn ra"
-                    : classItem.status === "past"
-                    ? "Đã kết thúc"
-                    : "Sắp diễn ra"}
+                  {classItem.status === 'current'
+                    ? t('listViewCalendar.status.current')
+                    : classItem.status === 'past'
+                    ? t('listViewCalendar.status.past')
+                    : t('listViewCalendar.status.upcoming')}
                 </Badge>
               </div>
             </div>

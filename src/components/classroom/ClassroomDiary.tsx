@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { FileText, Video } from "lucide-react";
 import { toast } from "sonner";
 import { RecordingModal } from "@/components/classroom/RecordingModal";
+import { useTranslation } from "react-i18next";
 
 interface DiaryEntry {
   id: string;
@@ -37,6 +38,7 @@ export function ClassroomDiary({
   classroom,
   testMode = false,
 }: ClassroomDiaryProps) {
+  const { t } = useTranslation();
   const [diaryContent, setDiaryContent] = useState("");
   const [diaryFiles, setDiaryFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,7 +46,7 @@ export function ClassroomDiary({
 
   const handleDiarySubmit = async () => {
     if (!diaryContent.trim()) {
-      toast.error("Vui lòng nhập nội dung nhật ký");
+      toast.error(t("classroomDetailPage.diary.placeholder"));
       return;
     }
 
@@ -53,10 +55,10 @@ export function ClassroomDiary({
       await onDiarySubmit(diaryContent, diaryFiles);
       setDiaryContent("");
       setDiaryFiles([]);
-      toast.success("Đã thêm nhật ký thành công");
+      toast.success(t("classroomDetailPage.toasts.addDiarySuccess"));
     } catch (error) {
       console.error("Error submitting diary:", error);
-      toast.error("Có lỗi xảy ra khi thêm nhật ký");
+      toast.error(t("classroomDetailPage.toasts.addDiaryError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -83,25 +85,31 @@ export function ClassroomDiary({
           <DialogTrigger asChild>
             <Button>
               <FileText className="mr-2 h-4 w-4" />
-              Thêm nhật ký
+              {t("classroomDetailPage.diary.newEntryLabel")}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Thêm nhật ký mới</DialogTitle>
+              <DialogTitle>{t("classroomDetailPage.diary.title")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="diary">Nội dung</Label>
+                <Label htmlFor="diary">
+                  {t("classroomDetailPage.diary.newEntryLabel")}
+                </Label>
                 <Input
                   id="diary"
                   value={diaryContent}
                   onChange={(e) => setDiaryContent(e.target.value)}
-                  placeholder="Nhập nội dung nhật ký..."
+                  placeholder={
+                    t("classroomDetailPage.diary.placeholder") as string
+                  }
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="files">Tệp đính kèm</Label>
+                <Label htmlFor="files">
+                  {t("classroomDetailPage.attendance.dialog.attachmentsLabel")}
+                </Label>
                 <Input
                   id="files"
                   type="file"
@@ -110,7 +118,9 @@ export function ClassroomDiary({
                 />
               </div>{" "}
               <Button onClick={handleDiarySubmit} disabled={isSubmitting}>
-                {isSubmitting ? "Đang gửi..." : "Gửi"}
+                {isSubmitting
+                  ? t("common.submitting")
+                  : t("classroomDetailPage.diary.submitButton")}
               </Button>
               {classroom && (
                 <Button
@@ -118,7 +128,7 @@ export function ClassroomDiary({
                   onClick={() => setIsRecordingModalOpen(true)}
                   variant="outline"
                 >
-                  Ghi hình
+                  {t("classroomDetailPage.infoCard.recording")}
                 </Button>
               )}
             </div>
@@ -137,7 +147,9 @@ export function ClassroomDiary({
             <p className="mt-2 whitespace-pre-wrap">{entry.content}</p>
             {entry.attachments.length > 0 && (
               <div className="mt-2">
-                <div className="text-sm font-medium">Tệp đính kèm:</div>
+                <div className="text-sm font-medium">
+                  {t("classroomDetailPage.diary.dialog.attachments")}
+                </div>
                 <ul className="mt-1 space-y-1">
                   {entry.attachments.map((file, index) => (
                     <li key={index} className="text-sm text-muted-foreground">

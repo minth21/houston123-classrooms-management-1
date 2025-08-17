@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Video, StopCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { RecordingSettings } from "@/lib/api/classroom";
+import { useTranslation } from "react-i18next";
 
 interface Recording {
   id: string;
@@ -22,6 +23,7 @@ export function RecordingControls({
   onUpload,
   recordingSettings,
 }: RecordingControlsProps) {
+  const { t } = useTranslation();
   const [recording, setRecording] = useState<Recording | null>(null);
   const [recordingError, setRecordingError] = useState<string | null>(null);
 
@@ -66,7 +68,7 @@ export function RecordingControls({
       });
     } catch (error) {
       console.error("Error starting recording:", error);
-      setRecordingError("Không thể bắt đầu ghi hình. Vui lòng thử lại.");
+      setRecordingError(t("recordingControls.error.start"));
     }
   };
 
@@ -80,23 +82,23 @@ export function RecordingControls({
       setRecording((prev) => (prev ? { ...prev, isRecording: false } : null));
     } catch (error) {
       console.error("Error stopping recording:", error);
-      setRecordingError("Không thể dừng ghi hình. Vui lòng thử lại.");
+      setRecordingError(t("recordingControls.error.stop"));
     }
   };
 
   const handleUpload = async () => {
     if (!recording || !recording.blob) {
-      toast.error("Không có video để tải lên");
+      toast.error(t("recordingControls.error.noVideo"));
       return;
     }
 
     try {
       await onUpload(recording);
       setRecording(null);
-      toast.success("Video đã được tải lên thành công");
+      toast.success(t("recordingControls.success.upload"));
     } catch (error) {
       console.error("Error uploading recording:", error);
-      setRecordingError("Không thể tải video lên máy chủ. Vui lòng thử lại.");
+      setRecordingError(t("recordingControls.error.upload"));
     }
   };
 
@@ -106,17 +108,19 @@ export function RecordingControls({
         {!recording?.isRecording ? (
           <Button onClick={startRecording}>
             <Video className="mr-2 h-4 w-4" />
-            Bắt đầu ghi hình
+            {t("recordingControls.start")}
           </Button>
         ) : (
           <Button onClick={stopRecording} variant="destructive">
             <StopCircle className="mr-2 h-4 w-4" />
-            Dừng ghi hình
+            {t("recordingControls.stop")}
           </Button>
         )}
 
         {recording?.blob && !recording.isRecording && (
-          <Button onClick={handleUpload}>Tải video lên</Button>
+          <Button onClick={handleUpload}>
+            {t("recordingControls.upload")}
+          </Button>
         )}
       </div>
 

@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import ThemeToggle from "../../components/theme-toggle";
 import {
   Select,
   SelectContent,
@@ -35,6 +36,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { companyService, Company, Branch } from "@/lib/api/company";
+import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -70,6 +74,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   );
   const [isCompanyLoading, setIsCompanyLoading] = useState(true);
   const [needsReload, setNeedsReload] = useState(false);
+
+  const { t } = useTranslation();
 
   // Fetch companies on mount
   useEffect(() => {
@@ -201,7 +207,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin h-10 w-10 border-4 border-blue-600 rounded-full border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">{t('loading')}</p>
         </div>
       </div>
     );
@@ -209,23 +215,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Navigation items with icons and dropdown structure
   const navItems: NavItem[] = [
-    {
-      name: "Tổng quan",
-      path: "/dashboard",
-      icon: <Home className="h-5 w-5" />,
-    },
-    {
-      name: "Lớp học",
-      icon: <BookOpen className="h-5 w-5" />,
-      children: [
-        {
-          name: "Danh sách lớp",
-          path: "/dashboard/classrooms",
-          icon: <List className="h-4 w-4" />,
-        },
-      ],
-      badge: "New",
-    },
+    { name: t('nav.overview'), path: "/dashboard", icon: <Home className="h-5 w-5" /> },
+    { name: t('nav.classrooms'), icon: <BookOpen className="h-5 w-5" />, children: [ { name: t('nav.classroom_list'), path: "/dashboard/classrooms", icon: <List className="h-4 w-4" /> } ], badge: t('nav.new_badge') }
   ];
 
   // Helper function to render sidebar nav items
@@ -374,9 +365,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-white border-b shadow-sm">
+      <header className="sticky top-0 z-30 bg-white dark:bg-card border-b shadow-sm">
         <div className="px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {/* Mobile menu button */}
@@ -417,11 +408,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
 
           <div className="flex items-center space-x-4">
+            {/* Language Switcher */}
+            <LanguageSwitcher compact />
             {/* Notifications */}
             <button className="relative p-1 text-gray-500 hover:text-blue-600 focus:outline-none">
               <Bell className="h-5 w-5" />
               <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
             </button>
+            {/* Theme toggle */}
+            <ThemeToggle />
 
             {/* User menu */}
             <UserMenu />
@@ -432,7 +427,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="flex-1 flex">
         {/* Sidebar - Desktop */}
         <aside
-          className={`hidden md:block bg-white border-r shadow-sm transition-all ${
+          className={`hidden md:block bg-white dark:bg-card border-r dark:border-border/40 shadow-sm transition-all ${
             isSidebarCollapsed ? "w-16" : "w-64"
           }`}
         >
@@ -446,7 +441,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               {!isSidebarCollapsed ? (
                 <div className="mt-6 border-t pt-4">
                   <h3 className="text-xs uppercase font-semibold text-gray-500 mb-3 px-3">
-                    Vị trí hiện tại
+                    {t('sidebar.current_location')}
                   </h3>
 
                   <div className="space-y-3 px-1">
@@ -454,7 +449,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2 px-2 text-xs text-gray-600">
                         <Building2 className="h-3.5 w-3.5" />
-                        <span>Công ty</span>
+                        <span>{t('sidebar.company')}</span>
                       </div>
                       <Select
                         disabled={isCompanyLoading || companies.length === 0}
@@ -462,7 +457,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         onValueChange={handleCompanySelect}
                       >
                         <SelectTrigger className="w-full text-xs h-8">
-                          <SelectValue placeholder="Chọn công ty" />
+                          <SelectValue placeholder={t('sidebar.select_company') as string} />
                         </SelectTrigger>
                         <SelectContent>
                           {companies.map((company) => (
@@ -478,7 +473,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2 px-2 text-xs text-gray-600">
                         <MapPin className="h-3.5 w-3.5" />
-                        <span>Chi nhánh</span>
+                        <span>{t('sidebar.branch')}</span>
                       </div>
                       <Select
                         disabled={
@@ -490,7 +485,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         onValueChange={handleBranchSelect}
                       >
                         <SelectTrigger className="w-full text-xs h-8">
-                          <SelectValue placeholder="Chọn chi nhánh" />
+                          <SelectValue placeholder={t('sidebar.select_branch') as string} />
                         </SelectTrigger>
                         <SelectContent>
                           {branches.map((branch) => (
@@ -527,7 +522,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Mobile sidebar */}
         <aside
-          className={`md:hidden fixed inset-y-0 left-0 z-30 w-64 bg-white shadow-lg transform transition-transform duration-200 ease-in-out ${
+          className={`md:hidden fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-card shadow-lg transform transition-transform duration-200 ease-in-out ${
             isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
@@ -557,7 +552,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               {/* Company and Branch Selection for Mobile */}
               <div className="mt-6 border-t pt-4">
                 <h3 className="text-xs uppercase font-semibold text-gray-500 mb-3 px-3">
-                  Vị trí hiện tại
+                  {t('sidebar.current_location')}
                 </h3>
 
                 <div className="space-y-3 px-1">
@@ -565,7 +560,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <div className="space-y-1">
                     <div className="flex items-center space-x-2 px-2 text-xs text-gray-600">
                       <Building2 className="h-3.5 w-3.5" />
-                      <span>Công ty</span>
+                      <span>{t('sidebar.company')}</span>
                     </div>
                     <Select
                       disabled={isCompanyLoading || companies.length === 0}
@@ -573,7 +568,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       onValueChange={handleCompanySelect}
                     >
                       <SelectTrigger className="w-full text-xs h-8">
-                        <SelectValue placeholder="Chọn công ty" />
+                        <SelectValue placeholder={t('sidebar.select_company') as string} />
                       </SelectTrigger>
                       <SelectContent>
                         {companies.map((company) => (
@@ -589,7 +584,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <div className="space-y-1">
                     <div className="flex items-center space-x-2 px-2 text-xs text-gray-600">
                       <MapPin className="h-3.5 w-3.5" />
-                      <span>Chi nhánh</span>
+                      <span>{t('sidebar.branch')}</span>
                     </div>
                     <Select
                       disabled={
@@ -601,7 +596,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       onValueChange={handleBranchSelect}
                     >
                       <SelectTrigger className="w-full text-xs h-8">
-                        <SelectValue placeholder="Chọn chi nhánh" />
+                        <SelectValue placeholder={t('sidebar.select_branch') as string} />
                       </SelectTrigger>
                       <SelectContent>
                         {branches.map((branch) => (
@@ -622,7 +617,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 onClick={handleLogout}
                 className="w-full justify-center mt-2"
               >
-                Đăng xuất
+                {t('userMenu.logout')}
               </Button>
             </div>
           </ScrollArea>
@@ -631,7 +626,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Main content */}
         <main className="flex-1 overflow-auto">
           {/* Breadcrumbs */}
-          <div className="bg-white p-4 border-b">
+          <div className="bg-white dark:bg-card p-4 border-b dark:border-border/40">
             <div className="container mx-auto">
               <div className="flex items-center text-sm text-gray-500">
                 {breadcrumbs.map((item, index) => (
@@ -660,10 +655,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
 
       {/* Footer */}
-      <footer className="border-t bg-white py-4">
-        <div className="container mx-auto px-4 text-center text-sm text-gray-500">
-          &copy; {new Date().getFullYear()} Houston123 Education. All rights
-          reserved.
+      <footer className="border-t bg-white dark:bg-card py-4">
+        <div className="container mx-auto px-4 text-center text-sm text-gray-500 dark:text-muted-foreground">
+          &copy; {new Date().getFullYear()} Houston123 Education. {t('footer.copyright')}
         </div>
       </footer>
     </div>

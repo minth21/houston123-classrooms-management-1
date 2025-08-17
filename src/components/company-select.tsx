@@ -87,6 +87,12 @@ export default function CompanySelect({ onBranchSelect }: CompanySelectProps) {
   const handleBranchSelect = (branchCode: string) => {
     setSelectedBranch(branchCode);
     companyService.setSelectedBranch(branchCode);
+    try {
+      const branch = branches.find(b => b.code === branchCode);
+      if (branch?._id) {
+        localStorage.setItem('selectedBranchId', branch._id);
+      }
+    } catch {}
     onBranchSelect(branchCode);
   };
 

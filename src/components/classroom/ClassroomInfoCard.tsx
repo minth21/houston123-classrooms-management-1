@@ -13,6 +13,7 @@ import { vi } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RecordingModal } from "@/components/classroom/RecordingModal";
+import { useTranslation } from "react-i18next";
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -26,6 +27,7 @@ export function ClassroomInfoCard({
   classroom,
   attendanceId,
 }: ClassroomInfoCardProps) {
+  const { t, i18n } = useTranslation();
   const [isRecordingModalOpen, setIsRecordingModalOpen] = useState(false);
   const [testMode, setTestMode] = useState(false);
   const [lastKeyPressTime, setLastKeyPressTime] = useState(0);
@@ -144,13 +146,13 @@ export function ClassroomInfoCard({
     if (nextClass.isToday) {
       if (nextClass.isHappening) {
         return {
-          text: `Đang diễn ra • ${timeRange}`,
+          text: `${t("classroomDetailPage.infoCard.schedule")} • ${timeRange}`,
           variant: "destructive" as const,
           icon: <AlertCircle className="h-3 w-3" />,
         };
       } else {
         return {
-          text: `Hôm nay • ${timeRange}`,
+          text: `${t("classroomDetailPage.attendance.title")} • ${timeRange}`,
           variant: "secondary" as const,
           icon: <Clock className="h-3 w-3" />,
         };
@@ -163,9 +165,7 @@ export function ClassroomInfoCard({
       };
     } else {
       return {
-        text: `${format(nextClass.date, "dd/MM", {
-          locale: vi,
-        })} • ${timeRange}`,
+        text: `${t("classroomDetailPage.infoCard.schedule")} ${timeRange}`,
         variant: "outline" as const,
         icon: <Calendar className="h-3 w-3" />,
       };
@@ -179,7 +179,9 @@ export function ClassroomInfoCard({
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>{classroom.subjectName}</CardTitle>
-            <CardDescription>Thông tin lớp học</CardDescription>
+            <CardDescription>
+              {t("classroomDetailPage.diary.description")}
+            </CardDescription>
           </div>{" "}
           {nextClassInfo && (
             <div className="flex items-center gap-2">
@@ -192,7 +194,9 @@ export function ClassroomInfoCard({
                     className="flex items-center gap-1"
                   >
                     <Video className="h-3 w-3" />
-                    {testMode ? "Ghi buổi học (TEST)" : "Ghi buổi học"}
+                    {testMode
+                      ? t("classroomDetailPage.infoCard.recording") + " (TEST)"
+                      : t("classroomDetailPage.infoCard.recording")}
                   </Button>
                 )}
               <Badge

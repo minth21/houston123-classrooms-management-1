@@ -12,10 +12,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/context/auth-context";
 import { useStaff } from "@/context/staff-context";
 import { LogOut, Building2, Phone, Mail } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function UserMenu() {
   const { logout } = useAuth();
   const { staff, loading } = useStaff();
+  const { t } = useTranslation();
 
   const getInitials = (name: string) => {
     return name
@@ -50,7 +52,7 @@ export default function UserMenu() {
         <div className="flex flex-col p-2">
           <div className="flex flex-col space-y-1 leading-none">
             <p className="font-medium text-base">
-              {loading ? "Đang tải..." : staff?.displayName}
+              {loading ? t("loading") : staff?.displayName}
             </p>
             <p className="text-xs text-muted-foreground">
               {staff?.positionName}
@@ -62,7 +64,9 @@ export default function UserMenu() {
           <div className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
               <Building2 className="h-3 w-3" />
-              <span>Mã nhân viên: {staff?.userId}</span>
+              <span>
+                {t("userMenu.staffId")}: {staff?.userId}
+              </span>
             </div>
             <div className="flex items-center gap-1">
               <Mail className="h-3 w-3" />
@@ -80,7 +84,7 @@ export default function UserMenu() {
           onClick={logout}
         >
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Đăng xuất</span>
+          <span>{t("userMenu.logout")}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

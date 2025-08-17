@@ -1,0 +1,721 @@
+{
+  "loading": "Loading...",
+  "nav": {
+    "overview": "Dashboard",
+    "classrooms": "Classes",
+    "classroom_list": "Class List",
+    "recordings": "Recordings",
+    "teachers": "Teachers",
+    "settings": "Settings",
+    "new_badge": "New"
+  },
+  "sidebar": {
+    "current_location": "Current Location",
+    "company": "Company",
+    "select_company": "Select a company",
+    "branch": "Branch",
+  "select_branch": "Select a branch"
+  },
+  "userMenu": {
+    "role": "Teacher",
+    "profile": "Profile",
+    "settings": "Settings",
+  "logout": "Log out",
+  "staffId": "Staff ID"
+  },
+  "footer": {
+    "copyright": "All rights reserved."
+  },
+  "common": {
+    "notAvailable": "N/A",
+    "notUpdated": "Not updated",
+    "teacher": "Teacher",
+    "submitting": "Submitting...",
+    "close": "Close",
+    "languages": {
+      "select": "Select language",
+      "vi": "Vietnamese",
+      "en": "English"
+    }
+  },
+  "schedulePage": {
+    "title": "Schedule",
+    "description": "View and manage class schedules.",
+    "searchPlaceholder": "Search by class ID, subject, or teacher...",
+    "clearSearch": "Clear",
+    "error": {
+      "loadClassrooms": "Failed to load classrooms. Please try again."
+    },
+    "stats": {
+      "activeClasses": "Active classes",
+      "todayClasses": "Today's classes",
+      "totalStudents": "Total students",
+      "teachers": "Teachers"
+    },
+    "noResults": {
+      "search": "No classrooms found matching your search.",
+      "noSchedules": "No schedules available. Please add schedules for the classes."
+    }
+  },
+  "classScheduleCalendar": {
+    "buttons": {
+      "today": "Today"
+    },
+    "emptyState": {
+      "noClassesForSelectedTime": "No classes scheduled for the selected time"
+    },
+    "monthView": {
+      "noClasses": "No classes"
+    },
+    "view": {
+      "month": "Month",
+      "week": "Week",
+      "day": "Day",
+      "list": "List"
+    },
+    "dialog": {
+      "description": "Details for class {{classId}}",
+      "subject": "Subject",
+      "time": "Time",
+      "room": "Room",
+      "teacher": "Teacher",
+      "viewDetailsButton": "View Class Details"
+    },
+    "listView": {
+      "todayBadge": "Today",
+      "concurrentClasses_one": "{{count}} class at the same time",
+      "concurrentClasses_other": "{{count}} classes at the same time",
+      "noClassesThisWeek": "No classes scheduled for this week"
+    },
+    "daysOfWeek": [
+      "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+    ],
+    "daysShort": [
+      "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+    ],
+    "details": {
+      "classId": "Class ID",
+      "time": "Time",
+      "room": "Room",
+      "teacher": "Teacher",
+      "studentCount": "Student Count",
+      "viewClassDetails": "View Class Details",
+      "classIdLabel": "Class ID:",
+      "roomLabel": "Room:",
+      "teacherLabel": "Teacher:"
+    },
+    "studentCount_one": "{{count}} student",
+    "studentCount_other": "{{count}} students"
+  },
+  "listViewCalendar": {
+    "headers": {
+      "subject": "Subject",
+      "time": "Time",
+      "room": "Room",
+      "teacher": "Teacher",
+      "status": "Status"
+    },
+    "status": {
+      "current": "In Progress",
+      "past": "Finished",
+      "upcoming": "Upcoming"
+    }
+  },
+  "recording": {
+    "page_title": "RECORD THE LESSON",
+    "page_description": "Manage and record session videos from your webcam",
+    "list_title": "Recording List",
+    "download_filename": "session-{{date}}-{{id}}.webm",
+    "available_devices": "Available Devices ({{count}}):",
+    "camera_label": "Camera {{index}}",
+    "webcam": "Webcam",
+    "screen": "Screen",
+    "start_webcam": "Start Webcam Recording",
+    "start_screen": "Start Screen Recording",
+    "stop_button": "Stop",
+    "download_button": "Download",
+    "no_recordings": "No videos have been recorded yet. Press the \"Start New Recording\" button to begin.",
+    "video_playback_warning": "Could not play video:",
+    "status": {
+      "recording_badge": "Recording",
+      "recording": "Recording...",
+      "completed": "Completed"
+    },
+    "instructions": {
+      "title": "Instructions:",
+      "step1": "Select recording mode: Webcam or Screen.",
+      "step2": "Grant camera/screen and microphone access when prompted by the browser.",
+      "step3": "Adjust video quality settings if needed.",
+      "step4": "Press the \"Start\" button to begin recording.",
+      "step5": "You can record multiple videos simultaneously.",
+      "step6": "Press \"Stop\" to finish recording and review the video.",
+      "step7": "Press \"Download\" to save the video to your device.",
+      "note_title": "Note:",
+      "note_1": "This feature works best on the latest versions of Chrome, Edge, or Firefox.",
+      "note_2": "When recording the screen, you can choose to record the entire screen, an application window, or a specific tab."
+    },
+    "log": {
+      "download_error": "Error downloading video:",
+      "start_screen_recording_error": "Error starting screen recording:",
+      "recording_not_found_warning": "Recording not found with ID:",
+      "stop_recorder_error": "Error stopping recorder:",
+      "track_stopped": "Stopped track: {{kind}}",
+      "stop_track_error": "Error stopping track {{kind}}:",
+      "stop_stream_tracks_error": "Error stopping stream tracks:",
+      "stop_recording_unknown_error": "Unknown error when stopping recording:"
+    },
+    "error": {
+      "download_failed": "Could not download video. Please try again.",
+      "https_required": "MediaDevices API requires HTTPS or localhost to work. Please access the site via HTTPS.",
+      "api_unavailable_warning": "MediaDevices API is not available in this environment",
+      "api_unavailable_error": "Your browser does not support or has blocked the MediaDevices API. Please ensure you are using a modern browser and allow camera access.",
+      "permission_denied": "You have denied camera access. Please grant permission in your browser settings to use this feature.",
+      "permission_prompt_failed_warning": "Could not trigger camera permission prompt:",
+      "permissions_api_unsupported_warning": "Permissions API not fully supported:",
+      "no_camera_found": "No camera found. Please ensure a camera is connected and working.",
+      "enumerate_devices_error": "Error while enumerating devices:",
+      "device_list_inaccessible": "Could not access the device list. Please ensure you have granted camera permissions.",
+      "check_permissions_error": "Error while checking permissions and devices:",
+      "general_permission_check_error": "An error occurred while checking device access permissions.",
+      "recorder_unsupported": "Your browser does not support the MediaRecorder API. Please use a more modern browser.",
+      "media_access_error_log": "Error accessing media devices:",
+      "permission_denied_camera_mic": "You have denied camera/microphone access. Please grant permission in your browser settings.",
+      "device_not_found": "No camera or microphone was found on your device.",
+      "device_in_use": "Your camera or microphone is currently in use by another application.",
+      "overconstrained_error": "Your device cannot meet the recording requirements. Please check your settings.",
+      "camera_access_failed": "Could not access camera: {{message}}",
+      "unknown_error": "Unknown error",
+      "create_recorder_error_log": "Error creating MediaRecorder:",
+      "create_recorder_failed": "Could not create recorder: {{message}}",
+      "create_blob_error_log": "Error creating video blob:",
+      "blob_creation_failed": "Could not process the recorded video.",
+      "recording_error_log": "Error during recording:",
+      "recording_error": "An error occurred during recording. Please try again.",
+      "start_recording_unknown_error_log": "Unknown error when starting recording:",
+      "start_recording_unknown_error": "Could not start recording. An unknown error occurred.",
+      "screen_unsupported": "Your browser does not support screen recording. Please use the latest version of Chrome, Edge, or Firefox.",
+      "screen_permission_denied": "You have denied screen recording permission.",
+      "screen_access_failed": "Could not access the screen: {{message}}",
+      "start_screen_recording_failed": "Could not start screen recording. An unknown error occurred.",
+      "stop_recording_failed": "Could not stop recording due to an error. Please try again or reload the page."
+    }
+  },
+  "settings_dialog": {
+    "trigger_button": "Recording Settings",
+    "title": "Recording Settings",
+    "description": "Adjust the video and audio quality parameters for the session.",
+    "labels": {
+      "resolution": "Resolution",
+      "fps": "Frame Rate",
+      "video_bitrate": "Video Bitrate (kbps)",
+      "video_codec": "Video Codec",
+      "audio_settings": "Audio Settings",
+      "audio_bitrate": "Audio Bitrate (kbps)",
+      "sample_rate": "Sample Rate (Hz)",
+      "audio_channels": "Audio Channels"
+    },
+    "placeholders": {
+      "resolution": "Select resolution",
+      "fps": "Select FPS",
+      "codec": "Select codec",
+      "sample_rate": "Select sample rate",
+      "channels": "Select channels"
+    },
+    "options": {
+      "resolutions": {
+        "full_hd": "Full HD (1920x1080)",
+        "hd": "HD (1280x720)",
+        "sd": "SD (854x480)",
+        "low": "Low (640x360)"
+      },
+      "channels": {
+        "mono": "Mono (1 channel)",
+        "stereo": "Stereo (2 channels)"
+      }
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "save": "Save"
+    }
+  },
+  "teacherDetailPage": {
+    "errors": {
+      "notFound": "Teacher information not found",
+      "loadFailed": "An error occurred while loading teacher information. Please try again."
+    },
+    "backToList": "Back to teacher list",
+    "staffIdLabel": "Staff ID: {{staffId}}",
+    "basicInfo": {
+      "position": "Position",
+      "education": "Education",
+      "branch": "Branch",
+      "defaultPosition": "Teacher"
+    },
+    "tabs": {
+      "schedule": "Schedule",
+      "moreInfo": "More Info"
+    },
+    "schedule": {
+      "title": "Weekly Schedule",
+      "noSchedule": "No schedule available"
+    },
+    "moreInfo": {
+      "title": "Detailed Information",
+      "personalId": "Personal ID",
+      "birthday": "Date of Birth",
+      "salaryInfo": "Salary Information",
+      "hourlyRate": "Hourly Rate",
+      "shiftRate": "Shift Rate",
+      "monthlyRate": "Monthly Rate",
+      "salaryFormat": "{{value}} VND"
+    }
+  },
+  "teachersPage": {
+    "header": {
+      "title": "TEACHER LIST",
+      "description": "Manage the center's list of teachers"
+    },
+    "searchPlaceholder": "Search for teachers...",
+    "errors": {
+      "invalidData": "Invalid data received",
+      "selectCompanyAndBranch": "Please select a company and branch first",
+      "selectCompany": "Please select a company first",
+      "selectBranch": "Please select a branch first",
+      "noBranchFound": "No branches found for the selected company",
+      "invalidBranch": "Invalid branch selected",
+      "loadFailed": "Could not load teacher list: {{message}}"
+    },
+    "selectionPrompt": {
+      "title": "Please select a company and branch",
+      "description": "You need to select a company and branch before viewing the teacher list",
+      "instruction": "Use the dropdown menus above to make a selection"
+    },
+    "emptyState": {
+      "noTeachers": "There are no teachers in the system yet.",
+      "noSearchResults": "No teachers found matching the keyword \"{{query}}\""
+    },
+    "tableHeaders": {
+      "teacher": "Teacher",
+      "Id": "ID",
+      "position": "Position",
+      "email": "Email",
+      "phone": "Phone Number",
+      "branch": "Branch",
+      "actions": "Actions"
+    },
+    "defaultPosition": "Teacher",
+    "actions": {
+      "details": "Details"
+    }
+  },
+  "classroomDetailPage": {
+    "backToList": "Back to Classrooms",
+    "errors": {
+      "loadFailed": "Failed to load classroom data",
+  "noDataFound": "No attendance data found",
+  "notFound": "Classroom not found"
+    },
+    "toasts": {
+      "saveRecordingSettingsSuccess": "Recording settings saved successfully",
+      "saveRecordingSettingsError": "Error saving recording settings",
+      "addingNoteLoading": "Adding note...",
+      "addNoteSuccess": "Note added successfully",
+      "addNoteError": "Error adding note",
+      "addNoteFallbackError": "Could not add note. Please try again later.",
+      "addingDiaryLoading": "Adding diary entry...",
+      "addDiarySuccess": "Diary entry added successfully",
+      "addDiaryError": "Error adding diary entry",
+      "addDiaryFallbackError": "Could not add diary entry. Please try again later."
+    },
+    "infoCard": {
+      "schedule": "Schedule",
+      "room": "Room",
+      "teacher": "Teacher",
+      "recording": "Recording"
+    },
+    "tabs": {
+      "attendance": "Attendance",
+      "diary": "Class Diary",
+      "members": "Members"
+    },
+    "classroom": {
+      "members": {
+        "empty": "No members",
+        "columns": {
+          "index": "#",
+          "userID": "Student ID",
+          "name": "Name",
+          "grade": "Grade",
+          "school": "School",
+          "phone": "Phone",
+          "status": "Status",
+          "official": "Official"
+        },
+        "status": {
+          "active": "Active"
+        },
+        "official": {
+          "yes": "Yes",
+          "no": "No"
+        }
+      }
+    },
+    "members": {
+      "tab": "Members",
+      "title": "Class Members",
+      "description": "List of students enrolled in this class",
+      "error": "Failed to load members",
+      "empty": "No members in this class",
+      "official": "Official",
+      "unofficial": "Pending",
+      "table": {
+        "studentId": "Student ID",
+        "name": "Full Name",
+        "grade": "Grade",
+        "phone": "Phone",
+        "school": "School",
+        "official": "Status"
+      }
+    },
+    "attendance": {
+      "title": "Attendance Records",
+      "description": "View and manage class attendance",
+      "noRecords": "No attendance records found",
+      "table": {
+        "date": "Date",
+        "time": "Time",
+        "room": "Room",
+        "studentCount": "Students",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "confirmed": "Confirmed",
+        "attended": "Attended",
+        "notAttended": "Not Attended"
+      },
+      "addNoteButton": "Add Note",
+      "dialog": {
+        "title": "Add Note - {{date}}",
+        "description": "Add notes or comments about this session",
+        "noteLabel": "Note",
+        "attachmentsLabel": "Attachments",
+        "placeholder": "Enter your note here...",
+        "filesSelected_one": "{{count}} file selected",
+        "filesSelected_other": "{{count}} files selected",
+        "submitButton": "Submit Note"
+      }
+    },
+    "diary": {
+      "title": "Class Diary",
+      "description": "Log notes, observations, and progress for this class",
+      "noEntries": "No diary entries yet",
+      "newEntryLabel": "New Diary Entry",
+      "placeholder": "How was the class today?",
+      "submitButton": "Post Entry",
+      "attachmentFile": "attachment-{{index}}"
+    }
+  },
+  "classroomsPage": {
+    "header": {
+      "title": "Classroom List",
+      "description": "Manage and view details of all classrooms"
+    },
+    "searchPlaceholder": "Search classrooms...",
+    "errors": {
+      "selectCompanyAndBranch": "Please select a company and branch first",
+      "loadFailed": "Failed to load classrooms. Please try again."
+    },
+    "filters": {
+      "all": "All Classes",
+      "active": "Active",
+      "inactive": "Inactive",
+      "today": "Today's Classes",
+      "upcoming": "Upcoming",
+      "monday": "Monday",
+      "wednesday": "Wednesday",
+      "friday": "Friday",
+      "weekend": "Weekend"
+    },
+    "selectionPrompt": {
+      "title": "Please select a company and branch",
+      "description": "You need to select a company and branch before viewing the classroom list",
+      "instruction": "Use the dropdown menus above to make a selection"
+    },
+    "emptyState": {
+      "noClassrooms": "No classrooms in the system.",
+      "noResults": "No matching classrooms found."
+    },
+    "tableHeaders": {
+      "classId": "Class ID",
+      "subject": "Subject Name",
+      "teacher": "Teacher",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "studentCount": "Students",
+      "status": "Status",
+      "schedule": "Schedule",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "viewSchedule": "Schedule",
+      "details": "View Details"
+    },
+    "dialog": {
+      "title": "Schedule for Class {{classId}}",
+      "noSchedule": "This class has no schedule yet.",
+      "roomLabel": "Room:",
+      "scheduleTitle": "Weekly Schedule",
+      "viewAllSchedulesButton": "View all schedules",
+      "tableHeaders": {
+        "day": "Day",
+        "start": "Start",
+        "end": "End",
+        "room": "Room"
+      },
+      "studentCount_one": "Attendance: {{count}} student",
+      "studentCount_other": "Attendance: {{count}} students"
+    }
+  }
+  ,
+  "recordingControls": {
+    "start": "Start Recording",
+    "stop": "Stop Recording",
+    "upload": "Upload Video",
+    "error": {
+      "start": "Could not start recording. Please try again.",
+      "stop": "Could not stop recording. Please try again.",
+      "noVideo": "No video to upload",
+      "upload": "Could not upload the video. Please try again."
+    },
+    "success": {
+      "upload": "Video uploaded successfully"
+    }
+  },
+  "recordingModal": {
+    "title_prefix": "Record Lesson",
+    "description": "Configure and record your lesson session",
+    "status": {
+      "ready": "✓ Ready to record",
+      "noPermission": "◯ No permission",
+      "previewActive": "✓ Preview active",
+      "previewStarting": "◯ Starting preview",
+      "recording": "RECORDING",
+      "completed": "Completed"
+    },
+    "tabs": {
+      "settings": "Settings",
+      "preview": "Preview",
+      "recording": "Recording",
+      "result": "Result"
+    },
+    "source": {
+      "title": "Recording Source",
+      "camera": "Camera",
+      "screen": "Screen",
+      "cameraLabel": "📹 Camera",
+      "microphoneLabel": "🎤 Microphone"
+    },
+    "quality": {
+      "title": "Recording Quality",
+      "resolution": "Resolution",
+      "frameRate": "Frame Rate",
+      "videoBitrate": "Video Bitrate (kbps)",
+      "audioBitrate": "Audio Bitrate (kbps)",
+      "options": {
+        "resolution": {
+          "full_hd": "Full HD (1920x1080) - High Quality",
+          "hd": "HD (1280x720) - Balanced",
+          "sd": "SD (854x480) - RAM Saving ⭐",
+          "low": "Low (640x360) - Maximum Saving"
+        },
+        "frameRate": {
+          "60": "60 FPS - Ultra Smooth",
+          "30": "30 FPS - Standard",
+          "25": "25 FPS - Saving ⭐",
+          "24": "24 FPS - Cinematic",
+          "15": "15 FPS - Maximum Saving"
+        },
+        "videoBitrate": {
+          "800": "800 kbps - Maximum Saving",
+          "1500": "1500 kbps - Saving ⭐",
+          "2500": "2500 kbps - Balanced",
+          "5000": "5000 kbps - High Quality",
+          "8000": "8000 kbps - Maximum Quality"
+        },
+        "audioBitrate": {
+          "64": "64 kbps - Saving",
+          "96": "96 kbps - Saving ⭐",
+          "128": "128 kbps - Balanced",
+          "192": "192 kbps - High Quality",
+          "320": "320 kbps - Maximum Quality"
+        }
+      }
+    },
+    "tips": {
+      "title": "RAM Optimization",
+      "item1": "• Use 854x480 or lower resolution",
+      "item2": "• Choose 25 FPS instead of 30 FPS",
+      "item3": "• 1500 kbps bitrate is usually enough",
+      "item4": "• Turn off preview after recording to save RAM"
+    },
+    "continueToPreview": "Continue to Preview",
+    "preview": {
+      "starting": "Starting preview...",
+      "allowPermissions": "Allow camera/microphone permissions",
+      "audio": "Audio:",
+      "backToSettings": "Back to settings",
+      "startRecording": "Start Recording"
+    },
+    "recording": {
+      "startingCamera": "Starting camera...",
+      "pleaseWait": "Please wait a moment",
+      "ready": "READY",
+      "start": "Start Recording",
+      "starting": "Starting...",
+      "stop": "Stop Recording",
+      "cameraReady": "Camera ready",
+      "cameraStarting": "Starting camera",
+      "fileLargeWarning": "⚠️ File is getting large. Consider stopping or lowering quality.",
+      "sizeWarning": "File is large ({{size}} MB), upload may take a while..."
+    },
+    "result": {
+      "videoTitle": "Recorded Video",
+      "autoUploaded": "Video was automatically uploaded after completion",
+      "showVideo": "Show video",
+      "hideVideo": "Hide video",
+      "clickToPreview": "Click 'Show video' to preview",
+      "saveRam": "Saves RAM when hidden",
+      "download": "Download",
+      "retryUpload": "Retry Upload",
+      "savedToDiary": "📝 Saved to diary"
+    },
+    "validation": {
+      "selectMic": "Please select a microphone",
+      "selectCamera": "Please select a camera",
+      "missingDevices": "Return to settings to select required devices.",
+      "generic": "⚠️ {{message}}"
+    },
+    "upload": {
+      "starting": "Retrying upload...",
+      "success": "Upload successful!",
+      "fail": "Upload failed: {{message}}",
+      "tooLarge": "File too large ({{size}} MB). Record a shorter video or reduce quality.",
+      "partialFail": "Recording completed but upload failed",
+      "successFull": "Recording and upload successful!"
+    }
+  }
+  ,
+  "scoreSheet": {
+    "tab": "Scores",
+    "empty": "No scores found",
+    "columns": {
+      "student": "Student",
+      "listening": "Listening",
+      "speaking": "Speaking",
+      "reading": "Reading",
+      "writing": "Writing",
+      "average": "Average",
+      "type": "Type",
+      "status": "Status"
+    },
+    "type": {
+      "process": "Process",
+      "final": "Final"
+    },
+    "status": {
+      "approved": "Approved",
+      "pending": "Pending",
+      "incomplete": "Incomplete"
+    },
+    "summary": {
+      "title": "Class Average per Skill"
+    },
+    "filters": {
+      "month": "Month",
+  "year": "Year",
+  "type": "Type"
+    },
+    "missingNotice": "{{count}} student(s) have incomplete scores",
+    "form": {
+      "title": "Edit Scores",
+      "save": "Save Scores",
+      "cancel": "Cancel",
+      "comment": "Comment",
+      "solution": "Solution"
+    },
+    "detail": {
+      "title": "Score details - {{name}}",
+      "subtitle": "Class: {{classID}} · Subject: {{subject}}",
+      "student": "Student",
+      "teacher": "Teacher",
+      "type": "Type",
+      "trueScore": "True Score",
+      "predicScore": "Predicted Score",
+      "noTrueScore": "No true score data",
+      "noPredicScore": "No predicted score data",
+      "approvedAt": "Approved at: {{date}}"
+    }
+  }
+  ,
+  "progress": {
+    "tab": "Progress",
+    "kpis": {
+      "improved": "Improved",
+      "declined": "Declined",
+      "unchanged": "Unchanged",
+      "avgDelta": "Avg Δ"
+    },
+    "chart": {
+      "overall": "Overall",
+      "title": "Class Progress",
+      "fromTo": "{{from}} → {{to}}",
+      "legend": {
+        "listening": "Listening",
+        "speaking": "Speaking",
+        "reading": "Reading",
+        "writing": "Writing",
+        "overall": "Overall"
+      }
+    },
+    "section": {
+      "kpis": "Progress Overview",
+      "classTrend": "Class Trend",
+      "classTrendDesc": "Grouped skill bars with overall performance line for the last 3 months.",
+      "students": "Student Progress",
+      "clickRow": "Click a row for detail"
+    },
+    "table": {
+      "student": "Student",
+      "m1": "M1",
+      "m2": "M2",
+      "m3": "M3",
+      "delta": "Δ",
+      "trend": "Trend"
+    },
+    "trend": {
+      "improved": "Improved",
+      "declined": "Declined",
+      "unchanged": "Unchanged",
+      "insufficient": "Insufficient"
+    },
+    "popup": {
+      "averages": "Averages",
+      "sparkline": "Trend sparkline",
+      "insufficient": "Insufficient data"
+    },
+    "detail": {
+      "averages": "Averages",
+      "months": "months",
+  "month": "Month",
+  "avg": "Avg",
+      "trend": "Trend",
+      "sparklineHint": "Smoothed sparkline",
+      "insufficient": "Insufficient data"
+    }
+  }
+}

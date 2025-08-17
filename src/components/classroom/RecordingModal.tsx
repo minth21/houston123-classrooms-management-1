@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Toaster } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface RecordingSettings {
   source: "camera" | "screen";
@@ -56,6 +57,7 @@ export function RecordingModal({
   classCode,
   classroomName,
 }: RecordingModalProps) {
+  const { t } = useTranslation();
   const [currentTab, setCurrentTab] = useState("settings");
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
@@ -105,7 +107,7 @@ export function RecordingModal({
         setHasPermission(true);
       } catch (error) {
         console.error("Error loading devices:", error);
-        toast.error("Không thể truy cập thiết bị ghi hình");
+        toast.error(t("recordingModal.status.noPermission"));
         setHasPermission(false);
       }
     };
@@ -259,8 +261,10 @@ export function RecordingModal({
     } catch (error) {
       console.error("Error starting preview:", error);
       const errorMessage =
-        error instanceof Error ? error.message : "Lỗi không xác định";
-      toast.error(`Không thể khởi động preview: ${errorMessage}`);
+        error instanceof Error
+          ? error.message
+          : t("common.unknown_error", { defaultValue: "Unknown error" });
+      toast.error(`${t("recordingModal.preview.starting")}: ${errorMessage}`);
 
       // Reset stream reference on error
       streamRef.current = null;
@@ -349,7 +353,7 @@ export function RecordingModal({
     try {
       // Nếu chưa có stream, khởi động preview trước
       if (!streamRef.current) {
-        toast.info("Đang khởi động camera/microphone...");
+        toast.info(t("recordingModal.upload.starting"));
         await startPreview();
 
         // Double check after starting preview
@@ -413,9 +417,9 @@ export function RecordingModal({
           // Cảnh báo nếu file quá lớn
           if (fileSizeMB > 30) {
             toast.warning(
-              `File khá lớn (${fileSizeMB.toFixed(
-                1
-              )} MB), upload có thể mất nhiều thời gian...`
+              t("recordingModal.recording.sizeWarning", {
+                size: fileSizeMB.toFixed(1),
+              })
             );
           }
           const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -424,16 +428,18 @@ export function RecordingModal({
 
           await uploadToDiary(
             file,
-            `Video bài học được ghi lại - ${classroomName} - ${new Date().toLocaleString(
-              "vi-VN"
-            )}`
+            `${t(
+              "recordingModal.title_prefix"
+            )} - ${classroomName} - ${new Date().toLocaleString()} `
           );
-          toast.success("Ghi hình và upload thành công!");
+          toast.success(t("recordingModal.upload.successFull"));
           onClose(); // Đóng modal sau khi upload thành công
         } catch (error) {
           console.error("Upload error:", error);
           const errorMessage =
-            error instanceof Error ? error.message : "Lỗi không xác định";
+            error instanceof Error
+              ? error.message
+              : t("common.unknown_error", { defaultValue: "Unknown error" });
 
           // Kiểm tra nếu lỗi do file quá lớn
           if (
@@ -442,12 +448,12 @@ export function RecordingModal({
             fileSizeMB > 40
           ) {
             toast.error(
-              `File quá lớn (${fileSizeMB.toFixed(
-                1
-              )} MB). Hãy ghi video ngắn hơn hoặc giảm chất lượng.`
+              t("recordingModal.upload.tooLarge", {
+                size: fileSizeMB.toFixed(1),
+              })
             );
           } else {
-            toast.error("Ghi hình thành công nhưng upload thất bại");
+            toast.error(t("recordingModal.upload.partialFail"));
           }
           setCurrentTab("result"); // Chuyển đến tab result để có thể thử lại
         }
@@ -455,7 +461,11 @@ export function RecordingModal({
 
       mediaRecorder.onerror = (event) => {
         console.error("MediaRecorder error:", event);
-        toast.error("Lỗi khi ghi hình");
+        toast.error(
+          t("recordingModal.recording.stopError", {
+            defaultValue: "Lỗi khi ghi hình",
+          })
+        );
         setIsRecording(false);
       };
 
@@ -473,12 +483,16 @@ export function RecordingModal({
           return newTime;
         });
       }, 1000);
-      toast.success("Đã bắt đầu ghi hình");
+      toast.success(t("recordingModal.recording.start"));
     } catch (error) {
       console.error("Error starting recording:", error);
       const errorMessage =
-        error instanceof Error ? error.message : "Lỗi không xác định";
-      toast.error(`Không thể bắt đầu ghi hình: ${errorMessage}`);
+        error instanceof Error
+          ? error.message
+          : t("common.unknown_error", { defaultValue: "Unknown error" });
+      toast.error(
+        t("recordingModal.recording.startError", { message: errorMessage })
+      );
     }
   };
   const stopRecording = () => {
@@ -504,7 +518,7 @@ export function RecordingModal({
         }
       }, 2000); // Đợi 2 giây để MediaRecorder hoàn thành việc xử lý
 
-      toast.success("Đã dừng ghi hình");
+      toast.success(t("recordingModal.recording.stop"));
     }
   };
 
@@ -528,24 +542,36 @@ export function RecordingModal({
     URL.revokeObjectURL(url);
   };
   const resolutionOptions = [
-    { value: "1920x1080", label: "Full HD (1920x1080) - Chất lượng cao" },
-    { value: "1280x720", label: "HD (1280x720) - Cân bằng" },
-    { value: "854x480", label: "SD (854x480) - Tiết kiệm RAM ⭐" },
-    { value: "640x360", label: "Low (640x360) - Tiết kiệm tối đa" },
+    {
+      value: "1920x1080",
+      label: t("recordingModal.quality.options.resolution.full_hd"),
+    },
+    {
+      value: "1280x720",
+      label: t("recordingModal.quality.options.resolution.hd"),
+    },
+    {
+      value: "854x480",
+      label: t("recordingModal.quality.options.resolution.sd"),
+    },
+    {
+      value: "640x360",
+      label: t("recordingModal.quality.options.resolution.low"),
+    },
   ];
 
   const frameRateOptions = [
-    { value: 60, label: "60 FPS - Siêu mượt" },
-    { value: 30, label: "30 FPS - Chuẩn" },
-    { value: 25, label: "25 FPS - Tiết kiệm ⭐" },
-    { value: 24, label: "24 FPS - Điện ảnh" },
-    { value: 15, label: "15 FPS - Tiết kiệm tối đa" },
+    { value: 60, label: t("recordingModal.quality.options.frameRate.60") },
+    { value: 30, label: t("recordingModal.quality.options.frameRate.30") },
+    { value: 25, label: t("recordingModal.quality.options.frameRate.25") },
+    { value: 24, label: t("recordingModal.quality.options.frameRate.24") },
+    { value: 15, label: t("recordingModal.quality.options.frameRate.15") },
   ];
 
   // Upload video to diary API
   const uploadToDiary = async (
     file: File,
-    content: string = "Video bài học được ghi lại"
+    content: string = t("recordingModal.title_prefix")
   ) => {
     try {
       const formData = new FormData();
@@ -602,20 +628,22 @@ export function RecordingModal({
       const fileName = `recording-${classroomName}-${timestamp}.webm`;
       const file = new File([recordedBlob], fileName, { type: "video/webm" });
 
-      toast.info("Đang thử upload lại...");
+      toast.info(t("recordingModal.upload.starting"));
       await uploadToDiary(
         file,
-        `Video bài học được ghi lại - ${classroomName} - ${new Date().toLocaleString(
-          "vi-VN"
-        )}`
+        `${t(
+          "recordingModal.title_prefix"
+        )} - ${classroomName} - ${new Date().toLocaleString()} `
       );
-      toast.success("Upload thành công!");
+      toast.success(t("recordingModal.upload.successFull"));
       onClose();
     } catch (error) {
       console.error("Retry upload error:", error);
       const errorMessage =
-        error instanceof Error ? error.message : "Lỗi không xác định";
-      toast.error(`Upload thất bại: ${errorMessage}`);
+        error instanceof Error
+          ? error.message
+          : t("common.unknown_error", { defaultValue: "Unknown error" });
+      toast.error(t("recordingModal.upload.fail", { message: errorMessage }));
     }
   };
 
@@ -637,10 +665,10 @@ export function RecordingModal({
   // Show validation error message
   const getValidationMessage = (): string => {
     if (!settings.audioDeviceId) {
-      return "Vui lòng chọn microphone";
+      return t("recordingModal.validation.microphoneRequired");
     }
     if (settings.source === "camera" && !settings.videoDeviceId) {
-      return "Vui lòng chọn camera";
+      return t("recordingModal.validation.cameraRequired");
     }
     return "";
   };
@@ -656,11 +684,11 @@ export function RecordingModal({
               <DialogTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl lg:text-2xl font-semibold">
                 <Video className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-primary" />
                 <span className="truncate">
-                  Ghi hình buổi học - {classroomName}
+                  {t("recordingModal.title_prefix")} - {classroomName}
                 </span>
               </DialogTitle>
               <DialogDescription className="text-base text-muted-foreground mt-1">
-                Cấu hình và ghi hình buổi học của bạn
+                {t("recordingModal.description")}
               </DialogDescription>{" "}
               {/* Status Bar */}
               <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3 sm:mt-4 pt-2 sm:pt-3 border-t">
@@ -670,8 +698,8 @@ export function RecordingModal({
                   className="text-xs sm:text-sm px-2 sm:px-3 py-1"
                 >
                   {hasPermission
-                    ? "✓ Sẵn sàng ghi hình"
-                    : "◯ Chưa có quyền truy cập"}
+                    ? t("recordingModal.status.ready")
+                    : t("recordingModal.status.noPermission")}
                 </Badge>
                 {currentTab === "preview" && (
                   <Badge
@@ -679,8 +707,8 @@ export function RecordingModal({
                     className="text-xs sm:text-sm px-2 sm:px-3 py-1"
                   >
                     {streamRef.current
-                      ? "✓ Preview đang hoạt động"
-                      : "◯ Đang khởi động preview"}
+                      ? t("recordingModal.status.previewActive")
+                      : t("recordingModal.status.previewStarting")}
                   </Badge>
                 )}{" "}
                 {isRecording && (
@@ -688,7 +716,8 @@ export function RecordingModal({
                     variant="destructive"
                     className="text-xs sm:text-sm animate-pulse px-2 sm:px-3 py-1"
                   >
-                    ● ĐANG GHI ({Math.floor(recordingTime / 60)}:
+                    ● {t("recordingModal.status.recording")} (
+                    {Math.floor(recordingTime / 60)}:
                     {(recordingTime % 60).toString().padStart(2, "0")})
                   </Badge>
                 )}
@@ -697,7 +726,7 @@ export function RecordingModal({
                     variant="outline"
                     className="text-xs sm:text-sm px-2 sm:px-3 py-1"
                   >
-                    ✓ Đã ghi xong (
+                    ✓ {t("recordingModal.status.completed")} (
                     {(recordedBlob.size / (1024 * 1024)).toFixed(1)} MB)
                   </Badge>
                 )}
@@ -720,9 +749,14 @@ export function RecordingModal({
                       className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium h-8 sm:h-10"
                     >
                       <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span className="hidden sm:inline">Cài đặt</span>
-                      <span className="sm:hidden">Settings</span>
-                    </TabsTrigger>                    <TabsTrigger
+                      <span className="hidden sm:inline">
+                        {t("recordingModal.tabs.settings")}
+                      </span>
+                      <span className="sm:hidden">
+                        {t("recordingModal.tabs.settings")}
+                      </span>
+                    </TabsTrigger>{" "}
+                    <TabsTrigger
                       value="preview"
                       disabled={!isDeviceSelectionValid()}
                       className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium h-8 sm:h-10"
@@ -738,16 +772,21 @@ export function RecordingModal({
                       ) : (
                         <Monitor className="h-3 w-3 sm:h-4 sm:w-4" />
                       )}
-                      <span className="hidden sm:inline">Preview</span>
-                      <span className="sm:hidden">Preview</span>
-                    </TabsTrigger>{" "}                    <TabsTrigger
+                      <span className="hidden sm:inline">
+                        {t("recordingModal.tabs.preview")}
+                      </span>
+                      <span className="sm:hidden">
+                        {t("recordingModal.tabs.preview")}
+                      </span>
+                    </TabsTrigger>{" "}
+                    <TabsTrigger
                       value="recording"
                       disabled={!hasPermission || !isDeviceSelectionValid()}
                       className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium h-8 sm:h-10"
                       onClick={(e) => {
                         if (!hasPermission) {
                           e.preventDefault();
-                          toast.error("Không có quyền truy cập thiết bị");
+                          toast.error(t("recordingModal.status.noPermission"));
                         } else if (!isDeviceSelectionValid()) {
                           e.preventDefault();
                           toast.error(getValidationMessage());
@@ -759,8 +798,12 @@ export function RecordingModal({
                       ) : (
                         <Video className="h-3 w-3 sm:h-4 sm:w-4" />
                       )}
-                      <span className="hidden sm:inline">Ghi hình</span>
-                      <span className="sm:hidden">Record</span>
+                      <span className="hidden sm:inline">
+                        {t("recordingModal.tabs.recording")}
+                      </span>
+                      <span className="sm:hidden">
+                        {t("recordingModal.tabs.recording")}
+                      </span>
                     </TabsTrigger>
                     <TabsTrigger
                       value="result"
@@ -768,8 +811,12 @@ export function RecordingModal({
                       className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium h-8 sm:h-10"
                     >
                       <Download className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span className="hidden sm:inline">Kết quả</span>
-                      <span className="sm:hidden">Result</span>
+                      <span className="hidden sm:inline">
+                        {t("recordingModal.tabs.result")}
+                      </span>
+                      <span className="sm:hidden">
+                        {t("recordingModal.tabs.result")}
+                      </span>
                     </TabsTrigger>
                   </TabsList>{" "}
                   <TabsContent value="settings" className="space-y-6">
@@ -778,7 +825,7 @@ export function RecordingModal({
                         <CardHeader className="pb-3">
                           <CardTitle className="text-lg flex items-center gap-2">
                             <Video className="h-5 w-5" />
-                            Nguồn ghi hình
+                            {t("recordingModal.source.title")}
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -799,7 +846,7 @@ export function RecordingModal({
                               size="lg"
                             >
                               <Camera className="h-5 w-5" />
-                              <span>Camera</span>
+                              <span>{t("recordingModal.source.camera")}</span>
                             </Button>
                             <Button
                               variant={
@@ -817,14 +864,14 @@ export function RecordingModal({
                               size="lg"
                             >
                               <Monitor className="h-5 w-5" />
-                              <span>Màn hình</span>
+                              <span>{t("recordingModal.source.screen")}</span>
                             </Button>
                           </div>
 
                           {settings.source === "camera" && (
                             <div className="space-y-3">
                               <Label className="text-sm font-medium">
-                                📹 Camera
+                                {t("recordingModal.source.cameraLabel")}
                               </Label>
                               <Select
                                 value={settings.videoDeviceId}
@@ -836,7 +883,13 @@ export function RecordingModal({
                                 }
                               >
                                 <SelectTrigger className="h-11">
-                                  <SelectValue placeholder="Chọn camera" />
+                                  <SelectValue
+                                    placeholder={
+                                      t(
+                                        "recordingModal.source.cameraLabel"
+                                      ) as string
+                                    }
+                                  />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {devices.videoDevices.map((device) => (
@@ -855,7 +908,7 @@ export function RecordingModal({
 
                           <div className="space-y-3">
                             <Label className="text-sm font-medium">
-                              🎤 Microphone
+                              {t("recordingModal.source.microphoneLabel")}
                             </Label>
                             <Select
                               value={settings.audioDeviceId}
@@ -867,7 +920,13 @@ export function RecordingModal({
                               }
                             >
                               <SelectTrigger className="h-11">
-                                <SelectValue placeholder="Chọn microphone" />
+                                <SelectValue
+                                  placeholder={
+                                    t(
+                                      "recordingModal.source.microphoneLabel"
+                                    ) as string
+                                  }
+                                />
                               </SelectTrigger>
                               <SelectContent>
                                 {devices.audioDevices.map((device) => (
@@ -892,13 +951,13 @@ export function RecordingModal({
                         <CardHeader className="pb-3">
                           <CardTitle className="text-lg flex items-center gap-2">
                             <Settings className="h-5 w-5" />
-                            Chất lượng ghi hình
+                            {t("recordingModal.quality.title")}
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                           <div className="space-y-3">
                             <Label className="text-sm font-medium">
-                              Độ phân giải
+                              {t("recordingModal.quality.resolution")}
                             </Label>
                             <Select
                               value={settings.resolution}
@@ -927,7 +986,7 @@ export function RecordingModal({
 
                           <div className="space-y-3">
                             <Label className="text-sm font-medium">
-                              Frame Rate
+                              {t("recordingModal.quality.frameRate")}
                             </Label>
                             <Select
                               value={settings.frameRate.toString()}
@@ -1036,20 +1095,13 @@ export function RecordingModal({
                               </div>
                               <div className="flex-1">
                                 <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-                                  Tối ưu hóa RAM
+                                  {t("recordingModal.tips.title")}
                                 </h4>
                                 <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-                                  <li>
-                                    • Dùng độ phân giải 854x480 hoặc thấp hơn
-                                  </li>
-                                  <li>• Chọn 25 FPS thay vì 30 FPS</li>
-                                  <li>
-                                    • Bitrate 1500 kbps thường đủ cho học online
-                                  </li>
-                                  <li>
-                                    • Tắt preview video sau khi ghi để tiết kiệm
-                                    RAM
-                                  </li>
+                                  <li>{t("recordingModal.tips.item1")}</li>
+                                  <li>{t("recordingModal.tips.item2")}</li>
+                                  <li>{t("recordingModal.tips.item3")}</li>
+                                  <li>{t("recordingModal.tips.item4")}</li>
                                 </ul>
                               </div>
                             </div>
@@ -1075,7 +1127,7 @@ export function RecordingModal({
                         size="lg"
                         className="px-8"
                       >
-                        Tiếp tục đến Preview
+                        {t("recordingModal.continueToPreview")}
                       </Button>
                     </div>
                   </TabsContent>
@@ -1139,10 +1191,12 @@ export function RecordingModal({
                                 <div className="text-center text-white/70">
                                   <Monitor className="h-16 w-16 mx-auto mb-3 opacity-50" />
                                   <p className="text-base font-medium">
-                                    Đang khởi động preview...
+                                    {t("recordingModal.preview.starting")}
                                   </p>
                                   <p className="text-sm mt-1">
-                                    Cho phép quyền truy cập camera/microphone
+                                    {t(
+                                      "recordingModal.preview.allowPermissions"
+                                    )}
                                   </p>
                                 </div>
                               </div>
@@ -1153,7 +1207,9 @@ export function RecordingModal({
                             <div className="mt-4 p-4 bg-muted rounded-lg">
                               <div className="flex items-center gap-3 text-sm">
                                 <Mic className="h-5 w-5 text-primary" />
-                                <span className="font-medium">Âm thanh:</span>
+                                <span className="font-medium">
+                                  {t("recordingModal.preview.audio")}:
+                                </span>
                                 <div className="flex-1 h-3 bg-background rounded-full overflow-hidden relative">
                                   <div
                                     className="h-full transition-all duration-100 ease-out rounded-full"
@@ -1207,7 +1263,7 @@ export function RecordingModal({
                             size="lg"
                           >
                             <Settings className="h-4 w-4 mr-2" />
-                            Quay lại cài đặt
+                            {t("recordingModal.preview.backToSettings")}
                           </Button>{" "}
                           <Button
                             onClick={() => {
@@ -1224,7 +1280,7 @@ export function RecordingModal({
                             size="lg"
                           >
                             <Video className="h-4 w-4 mr-2" />
-                            Bắt đầu ghi hình
+                            {t("recordingModal.preview.startRecording")}
                           </Button>
                         </div>
                       </CardContent>
@@ -1234,7 +1290,7 @@ export function RecordingModal({
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center justify-between text-lg">
-                          <span>Ghi hình</span>
+                          <span>{t("recordingModal.recording.title")}</span>
                           {isRecording && (
                             <Badge
                               variant="destructive"
@@ -1274,10 +1330,12 @@ export function RecordingModal({
                                 <div className="text-center text-white/70">
                                   <Video className="h-16 w-16 mx-auto mb-3 opacity-50" />
                                   <p className="text-base font-medium">
-                                    Đang khởi động camera...
+                                    {t(
+                                      "recordingModal.recording.startingCamera"
+                                    )}
                                   </p>
                                   <p className="text-sm mt-1">
-                                    Vui lòng chờ một chút
+                                    {t("recordingModal.recording.pleaseWait")}
                                   </p>
                                 </div>
                               </div>
@@ -1307,8 +1365,8 @@ export function RecordingModal({
                             >
                               <Video className="h-5 w-5 mr-2" />
                               {streamRef.current
-                                ? "Bắt đầu ghi"
-                                : "Đang khởi động..."}
+                                ? t("recordingModal.recording.start")
+                                : t("recordingModal.recording.starting")}
                             </Button>
                           ) : (
                             <Button
@@ -1318,7 +1376,8 @@ export function RecordingModal({
                               className="px-8 py-3 text-base"
                             >
                               <Square className="h-5 w-5 mr-2" />
-                              Dừng ghi ({formatTime(recordingTime)})
+                              {t("recordingModal.recording.stop")} (
+                              {formatTime(recordingTime)})
                             </Button>
                           )}
                         </div>
@@ -1335,8 +1394,10 @@ export function RecordingModal({
                               ></div>
                               <span className="font-medium">
                                 {streamRef.current
-                                  ? "Camera sẵn sàng"
-                                  : "Đang khởi động camera"}
+                                  ? t("recordingModal.recording.cameraReady")
+                                  : t(
+                                      "recordingModal.recording.cameraStarting"
+                                    )}
                               </span>
                             </div>
                             <Badge variant="outline" className="text-xs">
@@ -1364,8 +1425,8 @@ export function RecordingModal({
                           </div>
                           {isRecording && estimatedFileSize > 30 && (
                             <p className="text-xs text-orange-600 mt-2">
-                              ⚠️ File đang trở nên khá lớn. Hãy cân nhắc dừng
-                              ghi hoặc giảm chất lượng.
+                              ⚠️{" "}
+                              {t("recordingModal.recording.fileLargeWarning")}
                             </p>
                           )}
                         </div>
@@ -1375,10 +1436,11 @@ export function RecordingModal({
                   <TabsContent value="result" className="space-y-6">
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-lg">Video đã ghi</CardTitle>
+                        <CardTitle className="text-lg">
+                          {t("recordingModal.result.videoTitle")}
+                        </CardTitle>
                         <DialogDescription>
-                          Video đã được tự động upload lên hệ thống sau khi ghi
-                          hình hoàn tất
+                          {t("recordingModal.result.autoUploaded")}
                         </DialogDescription>
                       </CardHeader>{" "}
                       <CardContent className="space-y-6">
@@ -1409,7 +1471,9 @@ export function RecordingModal({
                                   setShowVideoPreview(!showVideoPreview)
                                 }
                               >
-                                {showVideoPreview ? "Ẩn video" : "Xem video"}
+                                {showVideoPreview
+                                  ? t("recordingModal.result.hideVideo")
+                                  : t("recordingModal.result.showVideo")}
                               </Button>
                             </div>
 
@@ -1440,7 +1504,7 @@ export function RecordingModal({
                                     Nhấn "Xem video" để preview
                                   </p>
                                   <p className="text-xs mt-1">
-                                    Tiết kiệm RAM khi không xem
+                                    {t("recordingModal.result.saveRam")}
                                   </p>
                                 </div>
                               </div>
@@ -1457,7 +1521,7 @@ export function RecordingModal({
                               disabled={!recordedBlob}
                             >
                               <Download className="h-4 w-4 mr-2" />
-                              Tải xuống
+                              {t("recordingModal.result.download")}
                             </Button>
 
                             <Button
@@ -1467,13 +1531,13 @@ export function RecordingModal({
                               className="px-6"
                               disabled={!recordedBlob}
                             >
-                              🔄 Upload lại
+                              🔄 {t("recordingModal.result.retryUpload")}
                             </Button>
                           </div>
 
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Badge variant="default" className="bg-blue-600">
-                              📝 Đã lưu vào diary
+                              {t("recordingModal.result.savedToDiary")}
                             </Badge>
                           </div>
                         </div>

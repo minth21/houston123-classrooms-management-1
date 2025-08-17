@@ -222,6 +222,13 @@ export const companyService = {
         throw new Error("No valid branches found in response");
       }
 
+      try {
+        const cachePayload = validBranches.map(b => ({ _id: b._id, id: b._id, code: b.code, name: b.name }));
+        localStorage.setItem("cached_branches", JSON.stringify(cachePayload));
+      } catch (e) {
+        console.warn("Failed to cache branches", e);
+      }
+
       return validBranches;
     } catch (error: any) {
       if (error.response?.status === 401 || error.message === "Unauthorized") {

@@ -9,6 +9,7 @@ import ClassScheduleCalendar from "@/components/classroom-schedule-calendar";
 import DashboardHeader from "@/components/dashboard-header";
 import Loader from "@/components/loader";
 import { Search, Calendar } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 // Define a calendar view type
 type CalendarView = "day" | "week" | "month" | "list";
@@ -21,6 +22,7 @@ export default function SchedulePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [calendarView, setCalendarView] = useState<CalendarView>("month"); // Default to month view
   const [calendarDate, setCalendarDate] = useState<Date>(new Date());
+  const { t } = useTranslation();
 
   // Load user preferences
   useEffect(() => {
@@ -73,7 +75,7 @@ export default function SchedulePage() {
         handleSearch(searchQuery);
       }
     } catch (err: any) {
-      setError("Failed to load classrooms. Please try again.");
+      setError(t("schedulePage.error.loadClassrooms"));
       console.error("Error loading classrooms:", err);
     } finally {
       setIsLoading(false);
@@ -136,8 +138,8 @@ export default function SchedulePage() {
           <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
           <p className="text-muted-foreground">
             {searchQuery
-              ? "Không tìm thấy lớp học nào phù hợp với từ khóa tìm kiếm."
-              : "Không có lịch học nào. Vui lòng thêm lịch cho các lớp học."}
+              ? t("schedulePage.noResults.search")
+              : t("schedulePage.noResults.noSchedules")}
           </p>
         </div>
       );
@@ -185,10 +187,9 @@ export default function SchedulePage() {
 
   return (
     <div className="space-y-6">
-      {" "}
       <DashboardHeader
-        title="Lịch giảng dạy"
-        description="Xem lịch giảng dạy của các lớp học"
+        title={t("schedulePage.title")}
+        description={t("schedulePage.description")}
       />
       {/* Search bar */}
       {!isLoading && !error && (
@@ -198,7 +199,7 @@ export default function SchedulePage() {
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Tìm kiếm lớp học, giáo viên, phòng học..."
+                placeholder={t("schedulePage.searchPlaceholder") as string}
                 className="pl-10 w-full"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
@@ -210,7 +211,7 @@ export default function SchedulePage() {
                   className="absolute right-1 top-1.5 h-7 px-2"
                   onClick={() => handleSearch("")}
                 >
-                  Xóa
+                  {t("schedulePage.clearSearch")}
                 </Button>
               )}
             </div>

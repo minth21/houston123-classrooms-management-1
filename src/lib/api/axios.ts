@@ -25,7 +25,8 @@ api.interceptors.request.use(
     }
 
     const selectedCompany = localStorage.getItem("selectedCompany");
-    const selectedBranch = localStorage.getItem("selectedBranch");
+  const selectedBranch = localStorage.getItem("selectedBranch");
+  const selectedBranchId = localStorage.getItem("selectedBranchId");
     const cachedBranch = JSON.parse(
       localStorage.getItem("cached_branches") || "[]"
     );
@@ -37,10 +38,29 @@ api.interceptors.request.use(
 
     if (selectedCompany) {
       config.headers["x-company"] = selectedCompany;
-    }    if (selectedBranch && config.url?.includes("diary/post")) {
-      config.headers["x-branch"] = cachedBranch?.find(
-        (b: { code: string }) => b.code === selectedBranch
-      )?._id;
+    }
+
+    if (selectedBranchId) {
+      config.headers["x-branch"] = selectedBranchId;
+    } else if (selectedBranch) {
+      const branchRecord = cachedBranch?.find(
+        (b: { code?: string; _id?: string; id?: string }) =>
+          b.code === selectedBranch || b._id === selectedBranch || b.id === selectedBranch
+      );
+      const resolvedBranchId = branchRecord?._id || branchRecord?.id;
+      if (resolvedBranchId) {
+        config.headers["x-branch"] = resolvedBranchId;
+      } else if (/^[a-fA-F0-9]{24}$/.test(selectedBranch)) {
+        config.headers["x-branch"] = selectedBranch;
+      }
+    }
+
+    if (!config.headers["x-branch"]) {
+      console.warn("Axios interceptor - Unable to resolve x-branch from:", {
+        selectedBranch,
+        selectedBranchId,
+        cachedBranchSample: cachedBranch?.slice?.(0,3)
+      });
     }
 
     console.log("Axios interceptor - Headers being sent:", {

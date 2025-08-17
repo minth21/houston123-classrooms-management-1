@@ -8,6 +8,7 @@ import {
   type Classroom,
 } from "@/lib/api/classroom";
 import { Toaster } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ClassroomInfoCard } from "@/components/classroom/ClassroomInfoCard";
 import { AttendanceTable } from "@/components/classroom/AttendanceTable";
 import { ClassroomDiary } from "@/components/classroom/ClassroomDiary";
+import { ClassroomMembersTable } from "@/components/classroom/ClassroomMembersTable";
+import type { ClassroomMember } from "@/types/classroomMember";
+import { ScoreSheetTable } from "@/components/classroom/ScoreSheetTable";
+import { ScoreSummaryGraph } from "@/components/classroom/ScoreSummaryGraph";
+import { MissingScoresNotice } from "@/components/classroom/MissingScoresNotice";
+import { flattenScoreSheet, type ScoreSheetResponse, type FlattenedScoreRow } from "@/types/scoreSheet";
+import { ScoreDetailDialog } from "@/components/classroom/ScoreDetailDialog";
+import { ScoreProgressDashboard } from "@/components/classroom/ScoreProgressDashboard";
 
 interface DiaryEntry {
   id: string;
@@ -39,11 +48,22 @@ export default function ClassroomDetailPage() {
       : "";
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([]);
+  const [members, setMembers] = useState<ClassroomMember[]>([]);
+  const [isMembersLoading, setIsMembersLoading] = useState(false);
+  const [scoreMonth, setScoreMonth] = useState<number>(new Date().getMonth() + 1);
+  const [scoreYear, setScoreYear] = useState<number>(new Date().getFullYear());
+  const [scoreType, setScoreType] = useState<number>(0);
+  const [scoreData, setScoreData] = useState<ScoreSheetResponse | null>(null);
+  const [scoreRows, setScoreRows] = useState<FlattenedScoreRow[]>([]);
+  const [selectedScoreRow, setSelectedScoreRow] = useState<FlattenedScoreRow | null>(null);
+  const [isScoreDialogOpen, setIsScoreDialogOpen] = useState(false);
+  const [isScoresLoading, setIsScoresLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentClassData, setCurrentClassData] = useState<Classroom | null>(
     null
   );
+  const { t } = useTranslation();
 
   // Fetch attendance data
   const fetchAttendanceData = async () => {
@@ -55,7 +75,7 @@ export default function ClassroomDetailPage() {
       );
       setAttendance(attendanceData);
     } catch (err) {
-      setError("Failed to load classroom data");
+      setError(t("classroomDetailPage.errors.loadFailed"));
       setAttendance([]);
     } finally {
       setIsLoading(false);
@@ -102,21 +122,47 @@ export default function ClassroomDetailPage() {
             classroomService.getClassrooms(),
             classroomService.getClassroomAttendance(classId),
           ]);
+          // Fetch members separately (non-blocking UI of initial data)
+          setIsMembersLoading(true);
+          classroomService
+            .getClassroomMembers(classId, { isOriginal: true })
+            .then((m) => setMembers(m))
+            .catch(() => setMembers([]))
+            .finally(() => setIsMembersLoading(false));
+          // Preload score sheet
+          setIsScoresLoading(true);
+          classroomService
+            .getClassroomScoreSheet({ classID: classId, month: scoreMonth, year: scoreYear, type: scoreType })
+            .then((resp) => {
+              setScoreData(resp);
+              if (resp) setScoreRows(flattenScoreSheet(resp, classId, scoreMonth, scoreYear));
+            })
+            .finally(() => setIsScoresLoading(false));
           if (isMounted) {
-            const classroom = classrooms.find((c) => c.classID === classId);
+            let classroom = classrooms.find((c) => c.classID === classId);
             if (!classroom) {
-              throw new Error("Classroom not found");
+              console.warn("Classroom not found in list, attempting fallback fetch", { classId });
+              const fetched = await classroomService.getClassroomById(classId);
+              if (fetched) classroom = fetched;
             }
-            setCurrentClassData(classroom);
+            if (!classroom) {
+              console.warn("Classroom not found after fallback", {
+                requested: classId,
+                available: classrooms.map(c=>c.classID).slice(0,25),
+                total: classrooms.length,
+              });
+              setError(t('classroomDetailPage.errors.notFound'));
+              setCurrentClassData(null);
+            } else setCurrentClassData(classroom);
             setAttendance(attendanceData);
             setIsLoading(false);
           }
         }
       } catch (err) {
         if (isMounted) {
-          setError("Failed to load classroom data");
-          setCurrentClassData(null);
-          setAttendance([]);
+          if (!error) {
+            setError(t("classroomDetailPage.errors.loadFailed"));
+          }
           setIsLoading(false);
         }
       }
@@ -128,6 +174,23 @@ export default function ClassroomDetailPage() {
       isMounted = false;
     };
   }, [classId]);
+
+  // Refetch scores when selector changes
+  useEffect(() => {
+    let active = true;
+    if (!classId) return;
+    setIsScoresLoading(true);
+    classroomService
+      .getClassroomScoreSheet({ classID: classId, month: scoreMonth, year: scoreYear, type: scoreType })
+      .then((resp) => {
+        if (!active) return;
+        setScoreData(resp);
+        if (resp) setScoreRows(flattenScoreSheet(resp, classId, scoreMonth, scoreYear));
+        else setScoreRows([]);
+      })
+      .finally(() => active && setIsScoresLoading(false));
+    return () => { active = false; };
+  }, [scoreMonth, scoreYear, scoreType, classId]);
 
   if (isLoading) {
     return <Loader />;
@@ -142,12 +205,11 @@ export default function ClassroomDetailPage() {
       </div>
     );
   }
-
   if (!currentClassData) {
     return (
       <div className="container mx-auto p-4">
         <Alert variant="destructive">
-          <AlertDescription>Classroom not found</AlertDescription>
+          <AlertDescription>{t("classroomDetailPage.errors.loadFailed")}</AlertDescription>
         </Alert>
       </div>
     );
@@ -164,7 +226,7 @@ export default function ClassroomDetailPage() {
         <Link href="/dashboard/classrooms">
           <Button variant="ghost" className="gap-2">
             <ChevronLeft className="h-4 w-4" />
-            Quay lại
+            {t('classroomDetailPage.backToList')}
           </Button>
         </Link>
       </div>{" "}
@@ -174,10 +236,13 @@ export default function ClassroomDetailPage() {
           attendanceId={getCurrentAttendanceId()}
         />
 
-        <Tabs defaultValue="attendance" className="w-full">
+    <Tabs defaultValue="attendance" className="w-full">
           <TabsList>
-            <TabsTrigger value="attendance">Điểm danh</TabsTrigger>
-            <TabsTrigger value="diary">Nhật ký</TabsTrigger>
+            <TabsTrigger value="attendance">{t('classroomDetailPage.tabs.attendance')}</TabsTrigger>
+            <TabsTrigger value="diary">{t('classroomDetailPage.tabs.diary')}</TabsTrigger>
+            <TabsTrigger value="members">{t('classroomDetailPage.tabs.members', 'Members')}</TabsTrigger>
+            <TabsTrigger value="scores">{t('scoreSheet.tab')}</TabsTrigger>
+      <TabsTrigger value="progress">{t('progress.tab', 'Progress')}</TabsTrigger>
           </TabsList>
           <TabsContent value="attendance">
             <AttendanceTable
@@ -192,6 +257,63 @@ export default function ClassroomDetailPage() {
               classroom={currentClassData}
             />
           </TabsContent>{" "}
+          <TabsContent value="members">
+            <ClassroomMembersTable members={members} isLoading={isMembersLoading} />
+          </TabsContent>
+          <TabsContent value="scores" className="space-y-4">
+            <div className="flex flex-wrap gap-4 items-end">
+              <div className="flex flex-col">
+                <label className="text-xs font-medium">{t('scoreSheet.filters.month')}</label>
+                <select
+                  className="border rounded px-2 py-1 text-sm bg-background"
+                  value={scoreMonth}
+                  onChange={(e)=>setScoreMonth(Number(e.target.value))}
+                >
+                  {Array.from({ length: 12 }, (_,i)=>i+1).map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="text-xs font-medium">{t('scoreSheet.filters.year')}</label>
+                <select
+                  className="border rounded px-2 py-1 text-sm bg-background"
+                  value={scoreYear}
+                  onChange={(e)=>setScoreYear(Number(e.target.value))}
+                >
+                  {Array.from({ length: 3 }, (_,i)=> new Date().getFullYear() - i).map(y => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="text-xs font-medium">{t('scoreSheet.filters.type')}</label>
+                <select
+                  className="border rounded px-2 py-1 text-sm bg-background"
+                  value={scoreType}
+                  onChange={(e)=>setScoreType(Number(e.target.value))}
+                >
+                  <option value={0}>{t('scoreSheet.type.process')}</option>
+                  <option value={1}>{t('scoreSheet.type.final')}</option>
+                </select>
+              </div>
+            </div>
+            <MissingScoresNotice rows={scoreRows} />
+            <ScoreSummaryGraph rows={scoreRows} />
+            <ScoreSheetTable
+              rows={scoreRows}
+              isLoading={isScoresLoading}
+              onSelectStudent={(r)=>{ setSelectedScoreRow(r); setIsScoreDialogOpen(true); }}
+            />
+            <ScoreDetailDialog
+              open={isScoreDialogOpen}
+              onOpenChange={(o)=> { setIsScoreDialogOpen(o); if(!o) setSelectedScoreRow(null); }}
+              row={selectedScoreRow}
+            />
+          </TabsContent>
+          <TabsContent value="progress" className="space-y-4">
+            <ScoreProgressDashboard classID={classId} baseMonth={scoreMonth} baseYear={scoreYear} type={scoreType} />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
