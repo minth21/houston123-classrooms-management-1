@@ -356,5 +356,57 @@ export const classroomService = {
       console.error('getClassroomById error', { message: e.message, response: e.response?.data });
       return null;
     }
-  }
+  },
+
+  async postClassroomScore(params: { classID: string; month: number; year: number; type: number; scores: Array<{ userID: string; listening?: string; speaking?: string; reading?: string; writing?: string; comment?: string; solution?: string; targetListening?: string; targetSpeaking?: string; targetReading?: string; targetWriting?: string; }> ; currentCurriculum?: string; nextCurriculum?: string; debug?: boolean; }): Promise<any> {
+    const { classID, month, year, type, scores, currentCurriculum = '', nextCurriculum = '', debug = false } = params;
+    const form = new FormData();
+    form.append('month', String(month));
+    form.append('year', String(year));
+    form.append('type', String(type));
+    form.append('currentCurriculum', currentCurriculum);
+    form.append('nextCurriculum', nextCurriculum);
+    scores.forEach(s => {
+      if (s.userID.endsWith('__targets__')) return;
+      const thucte: any[] = [];
+      const pushIf = (val?: string) => { if (val && val.trim() !== '') thucte.push({ d: null, _d: val.trim() }); };
+      pushIf(s.listening); pushIf(s.speaking); pushIf(s.reading); pushIf(s.writing);
+      if (!thucte.length) { thucte.push({ d: null, _d: '0' }); }
+      // Match potential target row
+      const targetRow = scores.find(t => t.userID === s.userID + '__targets__');
+      const chitieu: any[] = [];
+      const pushTarget = (val?: string) => { if (val && val.trim() !== '') chitieu.push({ d: null, _d: val.trim() }); };
+      if (targetRow) {
+        pushTarget(targetRow.listening);
+        pushTarget(targetRow.speaking);
+        pushTarget(targetRow.reading);
+        pushTarget(targetRow.writing);
+      } else {
+        // fallback single empty to satisfy API structure
+        chitieu.push({ d: null });
+      }
+      const payload = {
+        chitieu,
+        thucte,
+        comment: s.comment || '',
+        solution: s.solution || ''
+      };
+      const json = JSON.stringify(payload);
+      if (debug) console.log('Score payload for', s.userID, json);
+      form.append(s.userID, json);
+    });
+    if (debug) console.log('FormData keys', Array.from(form.keys()));
+    try {
+      const resp = await api.put(`/api/classroom/scoreSheet/${classID}`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
+      return resp.data;
+    } catch (e: any) {
+      const status = e?.response?.status;
+      if (debug) console.warn('PUT failed, attempting POST fallback', { status, data: e?.response?.data });
+      if (status === 405 || status === 404) {
+        const resp2 = await api.post(`/api/classroom/scoreSheet/${classID}`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
+        return resp2.data;
+      }
+      throw e;
+    }
+  },
 };

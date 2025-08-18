@@ -651,7 +651,12 @@
       "save": "Save Scores",
       "cancel": "Cancel",
       "comment": "Comment",
-      "solution": "Solution"
+      "solution": "Solution",
+      "edit": "Edit",
+  "actualScores": "Actual Scores",
+  "targetScores": "Target Scores",
+      "saveSuccess": "Scores saved successfully",
+      "saveError": "Failed to save scores"
     },
     "detail": {
       "title": "Score details - {{name}}",
