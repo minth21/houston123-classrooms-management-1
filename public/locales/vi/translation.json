@@ -14,13 +14,14 @@
     "company": "Công ty",
     "select_company": "Chọn công ty",
     "branch": "Chi nhánh",
-    "select_branch": "Chọn chi nhánh"
+  "select_branch": "Chọn chi nhánh"
   },
   "userMenu": {
     "role": "Giảng viên",
     "profile": "Thông tin cá nhân",
     "settings": "Cài đặt",
-    "logout": "Đăng xuất"
+  "logout": "Đăng xuất",
+  "staffId": "Mã nhân viên"
   },
   "footer": {
     "copyright": "Đã đăng ký bản quyền."
@@ -30,7 +31,12 @@
     "notUpdated": "Chưa cập nhật",
     "teacher": "Giảng viên",
     "submitting": "Đang gửi...",
-    "close": "Đóng"
+    "close": "Đóng",
+    "languages": {
+      "select": "Chọn ngôn ngữ",
+      "vi": "Tiếng Việt",
+      "en": "Tiếng Anh"
+    }
   },
   "schedulePage": {
     "title": "Lịch học",
@@ -98,8 +104,27 @@
       "roomLabel": "Phòng:",
       "teacherLabel": "Giảng viên:"
     },
+    "status": {
+      "current": "Đang diễn ra",
+      "upcoming": "Sắp diễn ra",
+      "past": "Đã kết thúc"
+    },
     "studentCount_one": "{{count}} học sinh",
     "studentCount_other": "{{count}} học sinh"
+  },
+  "listViewCalendar": {
+    "headers": {
+      "subject": "Môn học",
+      "time": "Thời gian",
+      "room": "Phòng",
+      "teacher": "Giáo viên",
+      "status": "Trạng thái"
+    },
+    "status": {
+      "current": "Đang diễn ra",
+      "past": "Đã kết thúc",
+      "upcoming": "Sắp diễn ra"
+    }
   },
   "recording": {
     "page_title": "GHI HÌNH BUỔI HỌC",
@@ -292,7 +317,8 @@
     "backToList": "Quay lại danh sách lớp học",
     "errors": {
       "loadFailed": "Không thể tải dữ liệu lớp học",
-      "noDataFound": "Không tìm thấy dữ liệu điểm danh"
+  "noDataFound": "Không tìm thấy dữ liệu điểm danh",
+  "notFound": "Không tìm thấy lớp học"
     },
     "toasts": {
       "saveRecordingSettingsSuccess": "Đã lưu cấu hình ghi hình thành công",
@@ -314,7 +340,47 @@
     },
     "tabs": {
       "attendance": "Điểm danh",
-      "diary": "Nhật ký lớp học"
+      "diary": "Nhật ký lớp học",
+      "members": "Thành viên"
+    },
+    "classroom": {
+      "members": {
+        "empty": "Chưa có học viên",
+        "columns": {
+          "index": "#",
+          "userID": "Mã học viên",
+          "name": "Họ tên",
+          "grade": "Khối",
+          "school": "Trường",
+          "phone": "Điện thoại",
+          "status": "Trạng thái",
+          "official": "Chính thức"
+        },
+        "status": {
+          "active": "Đang học"
+        },
+        "official": {
+          "yes": "Có",
+          "no": "Không"
+        }
+      }
+    },
+    "members": {
+      "tab": "Thành viên",
+      "title": "Danh sách học viên",
+      "description": "Danh sách học viên thuộc lớp này",
+      "error": "Không thể tải danh sách học viên",
+      "empty": "Chưa có học viên nào trong lớp",
+      "official": "Chính thức",
+      "unofficial": "Tạm thời",
+      "table": {
+        "studentId": "Mã học viên",
+        "name": "Họ và tên",
+        "grade": "Khối",
+        "phone": "Điện thoại",
+        "school": "Trường",
+        "official": "Trạng thái"
+      }
     },
     "attendance": {
       "title": "Bản ghi chấm công",
@@ -415,6 +481,243 @@
       },
       "studentCount_one": "Sĩ số: {{count}} học viên",
       "studentCount_other": "Sĩ số: {{count}} học viên"
+    }
+  }
+  ,
+  "recordingControls": {
+    "start": "Bắt đầu ghi hình",
+    "stop": "Dừng ghi hình",
+    "upload": "Tải video lên",
+    "error": {
+      "start": "Không thể bắt đầu ghi hình. Vui lòng thử lại.",
+      "stop": "Không thể dừng ghi hình. Vui lòng thử lại.",
+      "noVideo": "Không có video để tải lên",
+      "upload": "Không thể tải video lên máy chủ. Vui lòng thử lại."
+    },
+    "success": {
+      "upload": "Video đã được tải lên thành công"
+    }
+  },
+  "recordingModal": {
+    "title_prefix": "Ghi hình buổi học",
+    "description": "Cấu hình và ghi hình buổi học của bạn",
+    "status": {
+      "ready": "✓ Sẵn sàng ghi hình",
+      "noPermission": "◯ Chưa có quyền truy cập",
+      "previewActive": "✓ Preview đang hoạt động",
+      "previewStarting": "◯ Đang khởi động preview",
+      "recording": "ĐANG GHI",
+      "completed": "Đã ghi xong"
+    },
+    "tabs": {
+      "settings": "Cài đặt",
+      "preview": "Preview",
+      "recording": "Ghi hình",
+      "result": "Kết quả"
+    },
+    "source": {
+      "title": "Nguồn ghi hình",
+      "camera": "Camera",
+      "screen": "Màn hình",
+      "cameraLabel": "📹 Camera",
+      "microphoneLabel": "🎤 Microphone"
+    },
+    "quality": {
+      "title": "Chất lượng ghi hình",
+      "resolution": "Độ phân giải",
+      "frameRate": "Frame Rate",
+      "videoBitrate": "Video Bitrate (kbps)",
+      "audioBitrate": "Audio Bitrate (kbps)",
+      "options": {
+        "resolution": {
+          "full_hd": "Full HD (1920x1080) - Chất lượng cao",
+          "hd": "HD (1280x720) - Cân bằng",
+          "sd": "SD (854x480) - Tiết kiệm RAM ⭐",
+          "low": "Low (640x360) - Tiết kiệm tối đa"
+        },
+        "frameRate": {
+          "60": "60 FPS - Siêu mượt",
+          "30": "30 FPS - Chuẩn",
+          "25": "25 FPS - Tiết kiệm ⭐",
+          "24": "24 FPS - Điện ảnh",
+          "15": "15 FPS - Tiết kiệm tối đa"
+        },
+        "videoBitrate": {
+          "800": "800 kbps - Tiết kiệm tối đa",
+          "1500": "1500 kbps - Tiết kiệm ⭐",
+            "2500": "2500 kbps - Cân bằng",
+            "5000": "5000 kbps - Chất lượng cao",
+            "8000": "8000 kbps - Chất lượng tối đa"
+        },
+        "audioBitrate": {
+          "64": "64 kbps - Tiết kiệm",
+          "96": "96 kbps - Tiết kiệm ⭐",
+          "128": "128 kbps - Cân bằng",
+          "192": "192 kbps - Chất lượng cao",
+          "320": "320 kbps - Chất lượng tối đa"
+        }
+      }
+    },
+    "tips": {
+      "title": "Tối ưu hóa RAM",
+      "item1": "• Dùng độ phân giải 854x480 hoặc thấp hơn",
+      "item2": "• Chọn 25 FPS thay vì 30 FPS",
+      "item3": "• Bitrate 1500 kbps thường đủ cho học online",
+      "item4": "• Tắt preview video sau khi ghi để tiết kiệm RAM"
+    },
+    "continueToPreview": "Tiếp tục đến Preview",
+    "preview": {
+      "starting": "Đang khởi động preview...",
+      "allowPermissions": "Cho phép quyền truy cập camera/microphone",
+      "audio": "Âm thanh:",
+      "backToSettings": "Quay lại cài đặt",
+      "startRecording": "Bắt đầu ghi hình"
+    },
+    "recording": {
+      "startingCamera": "Đang khởi động camera...",
+      "pleaseWait": "Vui lòng chờ một chút",
+      "ready": "READY",
+      "start": "Bắt đầu ghi",
+      "starting": "Đang khởi động...",
+      "stop": "Dừng ghi",
+      "cameraReady": "Camera sẵn sàng",
+      "cameraStarting": "Đang khởi động camera",
+  "fileLargeWarning": "⚠️ File đang trở nên khá lớn. Hãy cân nhắc dừng ghi hoặc giảm chất lượng.",
+      "sizeWarning": "File khá lớn ({{size}} MB), upload có thể mất nhiều thời gian..."
+    },
+    "result": {
+      "videoTitle": "Video đã ghi",
+      "autoUploaded": "Video đã được tự động upload lên hệ thống sau khi ghi hình hoàn tất",
+      "showVideo": "Xem video",
+      "hideVideo": "Ẩn video",
+      "clickToPreview": "Nhấn \"Xem video\" để preview",
+      "saveRam": "Tiết kiệm RAM khi không xem",
+      "download": "Tải xuống",
+      "retryUpload": "Upload lại",
+      "savedToDiary": "📝 Đã lưu vào diary"
+    },
+    "validation": {
+  "selectMic": "Vui lòng chọn microphone",
+  "selectCamera": "Vui lòng chọn camera",
+      "missingDevices": "Quay lại cài đặt để chọn thiết bị cần thiết.",
+      "generic": "⚠️ {{message}}"
+    },
+    "upload": {
+      "starting": "Đang thử upload lại...",
+      "success": "Upload thành công!",
+      "fail": "Upload thất bại: {{message}}",
+      "tooLarge": "File quá lớn ({{size}} MB). Hãy ghi video ngắn hơn hoặc giảm chất lượng.",
+      "partialFail": "Ghi hình thành công nhưng upload thất bại",
+      "successFull": "Ghi hình và upload thành công!"
+    }
+  }
+  ,
+  "scoreSheet": {
+    "tab": "Điểm số",
+    "empty": "Chưa có điểm",
+    "columns": {
+      "student": "Học viên",
+      "listening": "Nghe",
+      "speaking": "Nói",
+      "reading": "Đọc",
+      "writing": "Viết",
+      "average": "Trung bình",
+      "type": "Loại",
+      "status": "Trạng thái"
+    },
+    "type": {
+      "process": "Quá trình",
+      "final": "Cuối kỳ"
+    },
+    "status": {
+      "approved": "Đã duyệt",
+      "pending": "Chờ duyệt",
+      "incomplete": "Thiếu"
+    },
+    "summary": {
+      "title": "Trung bình theo kỹ năng"
+    },
+    "filters": {
+      "month": "Tháng",
+  "year": "Năm",
+  "type": "Loại"
+    },
+    "missingNotice": "Có {{count}} học viên thiếu điểm",
+    "form": {
+      "title": "Cập nhật điểm",
+      "save": "Lưu điểm",
+      "cancel": "Hủy",
+      "comment": "Nhận xét",
+      "solution": "Giải pháp"
+    },
+    "detail": {
+      "title": "Chi tiết điểm - {{name}}",
+      "subtitle": "Lớp: {{classID}} · Môn: {{subject}}",
+      "student": "Học viên",
+      "teacher": "Giảng viên",
+      "type": "Loại",
+      "trueScore": "Điểm thực",
+      "predicScore": "Điểm dự đoán",
+      "noTrueScore": "Chưa có điểm thực",
+      "noPredicScore": "Chưa có điểm dự đoán",
+      "approvedAt": "Duyệt lúc: {{date}}"
+    }
+  }
+  ,
+  "progress": {
+    "tab": "Tiến bộ",
+    "kpis": {
+      "improved": "Cải thiện",
+      "declined": "Giảm sút",
+      "unchanged": "Không đổi",
+      "avgDelta": "Δ TB"
+    },
+    "chart": {
+      "overall": "Tổng",
+      "title": "Tiến bộ lớp",
+      "fromTo": "{{from}} → {{to}}",
+      "legend": {
+        "listening": "Nghe",
+        "speaking": "Nói",
+        "reading": "Đọc",
+        "writing": "Viết",
+        "overall": "Tổng"
+      }
+    },
+    "section": {
+      "kpis": "Tổng quan tiến bộ",
+      "classTrend": "Xu hướng lớp",
+      "classTrendDesc": "Cột kỹ năng nhóm với đường tổng thể 3 tháng gần nhất.",
+      "students": "Tiến bộ học viên",
+      "clickRow": "Nhấn vào hàng để xem chi tiết"
+    },
+    "table": {
+      "student": "Học viên",
+      "m1": "M1",
+      "m2": "M2",
+      "m3": "M3",
+      "delta": "Δ",
+      "trend": "Xu hướng"
+    },
+    "trend": {
+      "improved": "Tăng",
+      "declined": "Giảm",
+      "unchanged": "Không đổi",
+      "insufficient": "Thiếu dữ liệu"
+    },
+    "popup": {
+      "averages": "Trung bình",
+      "sparkline": "Biểu đồ xu hướng",
+      "insufficient": "Không đủ dữ liệu"
+    },
+    "detail": {
+      "averages": "Trung bình",
+      "months": "tháng",
+  "month": "Tháng",
+  "avg": "TB",
+      "trend": "Xu hướng",
+      "sparklineHint": "Đường xu hướng mượt",
+      "insufficient": "Không đủ dữ liệu"
     }
   }
 }

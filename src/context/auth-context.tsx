@@ -25,27 +25,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
   useEffect(() => {
-    // Check if user is already authenticated
+    // Initial auth check
     const checkAuth = () => {
       const authenticated = authService.isAuthenticated();
       setIsAuthenticated(authenticated);
-      
-      // If not authenticated and not on login page, redirect to login
-      if (!authenticated && !window.location.pathname.includes('/login')) {
-        router.push('/login');
-      }
-      
       setIsLoading(false);
     };
 
     checkAuth();
-    
-    // Set up interval to periodically check token validity
-    const interval = setInterval(checkAuth, 60000); // Check every minute
-    
+
+    // Set up a less frequent interval for token validation
+    // Since authService.isAuthenticated() already checks token expiry,
+    // we can check less frequently (every 5 minutes)
+    const interval = setInterval(checkAuth, 5 * 60 * 1000);
+
     return () => clearInterval(interval);
-  }, [router]);
+  }, []);
 
   const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);

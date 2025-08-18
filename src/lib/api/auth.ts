@@ -11,86 +11,99 @@ export interface AuthResponse {
   user?: any;
 }
 
+interface TokenResponse {
+  token: string;
+  data?: any;
+}
+
+const extractAndStoreToken = (response: any): TokenResponse | null => {
+  const token =
+    response.headers["authorization"] ||
+    response.headers["x-auth-token"] ||
+    (response.data && (response.data.token || response.data.accessToken));
+
+  if (!token) return null;
+
+  const cleanToken = token.replace("Bearer ", "");
+  localStorage.setItem("token", cleanToken);
+
+  if (response.status === 204) {
+    return { token: cleanToken };
+  }
+
+  return {
+    token: cleanToken,
+    data: response.data,
+  };
+};
+
+const attemptLogin = async (
+  credentials: LoginCredentials,
+  endpoint: string,
+  axiosInstance: typeof axios | typeof api = axios
+): Promise<TokenResponse> => {
+  try {
+    const response = await axiosInstance.post(endpoint, credentials, {
+      validateStatus: (status) => status >= 200 && status < 500,
+    });
+
+    const result = extractAndStoreToken(response);
+    if (!result) {
+      throw new Error(`No token found in response from ${endpoint}`);
+    }
+
+    return result;
+  } catch (error: any) {
+    console.error(`Login attempt failed for ${endpoint}:`, error.message);
+    throw error;
+  }
+};
+
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      // First try using the direct proxy route to avoid CORS issues
-      const response = await axios.post("/auth/token", credentials);
+      console.log("Attempting login through Next.js API route...");
+      
+      const response = await api.post("/api/auth/token", credentials, {
+        validateStatus: (status) => status >= 200 && status < 500,
+      });
 
-      // Check for an authentication token in the response headers or data
-      const token =
-        response.headers["authorization"] ||
-        response.headers["x-auth-token"] ||
-        (response.data && (response.data.token || response.data.accessToken));
+      console.log("Login response:", {
+        status: response.status,
+        hasData: !!response.data,
+        hasToken: !!(response.data?.token)
+      });
 
-      // For 204 responses, we might need to extract token from headers
-      if (response.status === 204) {
-        if (token) {
-          localStorage.setItem("token", token.replace("Bearer ", ""));
-          return { token: token.replace("Bearer ", "") };
-        }
-      } else if (response.data && response.data.token) {
-        localStorage.setItem("token", response.data.token);
-        return response.data;
+      // Check if the response indicates success
+      if (response.status === 200 && response.data?.token) {
+        const token = response.data.token;
+        localStorage.setItem("token", token);
+        
+        return {
+          token,
+          ...(response.data.data && { user: response.data.data }),
+        };
+      } else {
+        // Handle error responses (401, etc.)
+        const errorMessage = response.data?.error || 
+                           response.data?.message || 
+                           `Authentication failed with status ${response.status}`;
+        throw new Error(errorMessage);
       }
-
-      // If we reach here, try the second method
-      throw new Error("No token found in response");
     } catch (error: any) {
-      try {
-        // Then try using the server-side API route
-        const response = await axios.post("/api/auth/token", credentials, {
-          validateStatus: (status) => status >= 200 && status < 500,
-        });
-
-        // Check for an authentication token in the response headers for 204 response
-        const token =
-          response.headers["authorization"] ||
-          response.headers["x-auth-token"] ||
-          (response.data && response.data.token);
-
-        if (response.status === 204) {
-          if (token) {
-            localStorage.setItem("token", token.replace("Bearer ", ""));
-            return { token: token.replace("Bearer ", "") };
-          }
-        } else if (response.data && response.data.token) {
-          localStorage.setItem("token", response.data.token);
-          return response.data;
-        } else {
-          throw new Error("Invalid response format - token not found");
-        }
-      } catch (innerError: any) {
-        // Fallback to the proxied API endpoint if the server-side route fails
-        const response = await api.post(
-          "/authorization/getToken",
-          credentials,
-          {
-            validateStatus: (status) => status >= 200 && status < 500,
-          }
-        );
-
-        // Check for token in response or headers
-        const token =
-          response.headers["authorization"] ||
-          response.headers["x-auth-token"] ||
-          (response.data && response.data.token);
-
-        if (response.status === 204) {
-          if (token) {
-            localStorage.setItem("token", token.replace("Bearer ", ""));
-            return { token: token.replace("Bearer ", "") };
-          }
-        } else if (response.data && response.data.token) {
-          localStorage.setItem("token", response.data.token);
-          return response.data;
-        } else {
-          // If we still don't have a token, this is an error
-          throw new Error("Authentication failed - could not acquire token");
-        }
-      }
+      console.error("Login failed:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      throw new Error(
+        error.response?.data?.error || 
+        error.response?.data?.message || 
+        error.message ||
+        "Authentication failed"
+      );
     }
-    throw new Error("Authentication failed");
   },
 
   isAuthenticated(): boolean {
