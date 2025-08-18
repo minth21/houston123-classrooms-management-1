@@ -648,7 +648,12 @@
       "save": "Lưu điểm",
       "cancel": "Hủy",
       "comment": "Nhận xét",
-      "solution": "Giải pháp"
+      "solution": "Giải pháp",
+      "edit": "Sửa",
+  "actualScores": "Điểm thực tế",
+  "targetScores": "Chỉ tiêu điểm",
+      "saveSuccess": "Lưu điểm thành công",
+      "saveError": "Lưu điểm thất bại"
     },
     "detail": {
       "title": "Chi tiết điểm - {{name}}",

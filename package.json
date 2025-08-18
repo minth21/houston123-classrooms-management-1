@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "start:pm2": "pm2 start ecosystem.config.cjs --only web",
+    "reload:pm2": "pm2 reload web",
+    "logs:pm2": "pm2 logs web",
+    "stop:pm2": "pm2 stop web"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -48,6 +52,7 @@
     "local-ssl-proxy": "^2.0.5",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.2.9",
-    "typescript": "^5"
+    "typescript": "^5",
+    "pm2": "^5.4.2"
   }
 }
