@@ -8,7 +8,13 @@ interface QuickStatCardProps {
   color: string;
 }
 
-export function QuickStatCard({ title, value, description, icon, color }: QuickStatCardProps) {
+export function QuickStatCard({
+  title,
+  value,
+  description,
+  icon,
+  color,
+}: QuickStatCardProps) {
   return (
     <Card>
       <CardContent className="p-6">

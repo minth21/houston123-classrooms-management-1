@@ -1,91 +1,118 @@
-import { NextResponse } from 'next/server';
-import axios from 'axios';
+import { NextRequest, NextResponse } from "next/server";
+import axios from "axios";
 
-/**
- * API route that proxies requests to the Houston123 API
- * This helps bypass CORS issues by making the request server-side
- */
-export async function POST(request: Request) {
+const ERP_API_URL = "https://erp.houston123.edu.vn";
+
+export async function POST(request: NextRequest) {
   try {
-    // Get the request body as JSON
     const body = await request.json();
-    
-    // Forward the request to the actual API with all headers
+    console.log("Forwarding auth request to ERP API...");
+    console.log("Request body:", body); // Forward the request to the ERP API
     const response = await axios.post(
-      'https://erp.houston123.edu.vn/api/authorization/getToken',
+      `${ERP_API_URL}/api/authorization/getToken`,
       body,
       {
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          "Content-Type": "application/json",
         },
         validateStatus: (status) => status >= 200 && status < 500,
       }
     );
 
-    // Extract the token from the response if available
-    let token = null;
-    if (response.headers['authorization']) {
-      token = response.headers['authorization'];
-    } else if (response.headers['x-auth-token']) {
-      token = response.headers['x-auth-token'];
-    } else if (response.data && response.data.token) {
-      token = response.data.token;
-    }
+    console.log("ERP API Response:", {
+      status: response.status,
+      headers: Object.keys(response.headers),
+      hasData: !!response.data,
+      data: response.data,
+    });
 
-    // Handle 204 No Content responses specially
-    if (response.status === 204) {
-      const headers = new Headers();
-      // If we found a token, include it in the response headers
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-        headers.set('X-Auth-Token', token);
-      }
-      headers.set('Content-Type', 'application/json');
-      
-      return new Response(null, { 
-        status: 204,
-        headers: headers
-      });
-    }
+    // Get the token from the response
+    const token =
+      response.headers["authorization"] ||
+      response.headers["x-auth-token"] ||
+      (response.data && (response.data.token || response.data.accessToken));
 
-    // For other responses, create a response with the same status and data
-    const headers = new Headers();
-    if (token) {
-      headers.set('Authorization', `Bearer ${token}`);
-      headers.set('X-Auth-Token', token);
-    }
-    headers.set('Content-Type', 'application/json');
-
-    return new NextResponse(
-      JSON.stringify(response.data),
-      {
+    if (!token && response.status !== 204) {
+      console.error("No token found in response:", {
         status: response.status,
-        headers: headers,
-      }
-    );
-  } catch (error: any) {
-    console.error('API proxy error:', error);
-    console.error('Details:', error.response?.data || error.message);
-    
-    // Handle 204 No Content responses in error cases too
-    if (error.response?.status === 204) {
-      return new Response(null, { status: 204 });
-    }
-    
-    // Forward the error response exactly as received
-    if (error.response) {
-      return new NextResponse(
-        JSON.stringify(error.response.data || {}),
-        {
-          status: error.response.status,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
+        headers: response.headers,
+        data: response.data,
+      });
+      return NextResponse.json(
+        { error: "No token received from authentication server" },
+        { status: 401 }
       );
     }
-    
-    return NextResponse.json({ message: 'Internal server error', error: error.message }, { status: 500 });
+
+    // For 204 responses (No Content), the token might be in headers
+    if (response.status === 204) {
+      if (token) {
+        const cleanToken = token.replace("Bearer ", "");
+        const res = NextResponse.json(
+          { success: true, token: cleanToken },
+          { status: 200 }
+        );
+
+        // Set the token in an HTTP-only cookie
+        res.cookies.set("token", cleanToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+        });
+
+        return res;
+      } else {
+        return NextResponse.json(
+          { error: "Authentication successful but no token provided" },
+          { status: 401 }
+        );
+      }
+    }
+
+    // For other successful responses
+    const cleanToken = token.replace("Bearer ", "");
+    const res = NextResponse.json(
+      { success: true, token: cleanToken, data: response.data },
+      { status: 200 }
+    );
+
+    // Set the token in an HTTP-only cookie
+    res.cookies.set("token", cleanToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
+
+    return res;
+  } catch (error: any) {
+    console.error("Authentication error:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      url: error.config?.url,
+    });
+
+    return NextResponse.json(
+      {
+        error: "Authentication failed",
+        details: error.response?.data || error.message,
+      },
+      { status: error.response?.status || 500 }
+    );
   }
+}
+
+// Handle OPTIONS request for CORS
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Max-Age": "86400",
+    },
+  });
 }

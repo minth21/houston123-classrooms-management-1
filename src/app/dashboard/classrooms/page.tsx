@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,20 +22,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { classroomService, Classroom } from "@/lib/api/classroom";
+import { useStaff } from "@/context/staff-context";
 import DashboardHeader from "@/components/dashboard-header";
 import Loader from "@/components/loader";
-import {
-  Search,
-  Calendar,
-  Clock,
-  ChevronRight,
-  ExternalLink,
-  Users,
-} from "lucide-react";
+import { Search, Calendar, Clock, ChevronRight, Users } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
 
 export default function ClassroomsPage() {
-  const { t, i18n} = useTranslation();
   const router = useRouter();
+  const { staff } = useStaff();
+  const { t } = useTranslation();
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [filteredClassrooms, setFilteredClassrooms] = useState<Classroom[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,17 +45,41 @@ export default function ClassroomsPage() {
     null
   );
   const [isTimeDialogOpen, setIsTimeDialogOpen] = useState(false);
+  const DEBUG = typeof window !== "undefined" && (window as any).__APP_DEBUG__ === true;
 
-  // Load classrooms based on the selected branch
+  const parseISOToDate = (value?: string | null): Date | null => {
+    if (!value) return null;
+    if (/([zZ]|[+\-]\d{2}:?\d{2})$/.test(value)) {
+      const d = new Date(value);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    const [datePart, timePart] = value.split("T");
+    if (!datePart) return null;
+    const [y, m, d] = datePart.split("-").map(Number);
+    if (!y || !m || !d) return null;
+    if (!timePart) return new Date(y, m - 1, d, 0, 0, 0, 0);
+    const [hh, mm = "0", ss = "0"] = timePart.split(":");
+    return new Date(y, m - 1, d, Number(hh), Number(mm), Number(ss));
+  };
+
+  // Load classrooms based on the selected branch and staff role
   const loadClassrooms = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await classroomService.getClassrooms();
-      setClassrooms(data);
-      setFilteredClassrooms(data);
-      if (data.length > 0) {
-        applyFilters(data, searchQuery, filterParam || "all");
+
+      if (!staff) {
+        setError("Staff information not available");
+        return;
+      }
+
+  const data = await classroomService.getClassrooms();
+  const filteredData = data.filter((c) => c.teacherCode === staff.userId);
+
+      setClassrooms(filteredData);
+      setFilteredClassrooms(filteredData);
+      if (filteredData.length > 0) {
+        applyFilters(filteredData, searchQuery, filterParam || "all");
       }
     } catch (err: any) {
       if (err.message === "Please select a company and branch first") {
@@ -72,25 +92,19 @@ export default function ClassroomsPage() {
       setIsLoading(false);
     }
   };
-
-  // Check authentication and branch selection only once on mount
+  // Check authentication and branch selection when staff data is available
   useEffect(() => {
     const checkBranchAndLoad = () => {
       const branch = localStorage.getItem("selectedBranch");
       const company = localStorage.getItem("selectedCompany");
-      if (branch && company) {
+      if (branch && company && staff) {
+  if (DEBUG) console.log("Loading classrooms with staff:", staff);
         setBranchSelected(true);
         loadClassrooms();
       }
     };
     checkBranchAndLoad();
-  }, []);
-
-  // Handle branch selection
-  const handleBranchSelect = () => {
-    setBranchSelected(true);
-    loadClassrooms();
-  };
+  }, [staff]); // Add staff as a dependency
 
   // Apply filters to the classrooms data
   const applyFilters = (data: Classroom[], query: string, tab: string) => {
@@ -115,14 +129,17 @@ export default function ClassroomsPage() {
         return schedules.some((s) => s.dayOfWeek === todayDayOfWeek);
       });
     } else if (tab === "upcoming") {
-      // Filter for upcoming classes (starting within the next 7 days)
+      // Upcoming = classes whose first startDate is in future (>= now) within next 7 days
+      // AND not already finished (finishDate >= now) and active
       const now = new Date();
-      const nextWeek = new Date();
-      nextWeek.setDate(now.getDate() + 7);
-
+      const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
       filtered = filtered.filter((classroom) => {
-        if (!classroom.startDate) return false;
-        const start = new Date(classroom.startDate);
+        if (!classroom.isActive) return false;
+        const start = parseISOToDate(classroom.startDate);
+        if (!start) return false;
+        // If finishDate exists and is before now -> exclude
+        const finish = parseISOToDate(classroom.finishDate);
+        if (finish && finish < now) return false;
         return start >= now && start <= nextWeek;
       });
     } else if (tab === "monday") {
@@ -150,6 +167,13 @@ export default function ClassroomsPage() {
         return schedules.some((s) => s.dayOfWeek === 0 || s.dayOfWeek === 6);
       });
     }
+
+    // Enforce global finishDate filtering for all tabs (remove classes already ended)
+    const now = new Date();
+    filtered = filtered.filter((c) => {
+      const finish = parseISOToDate(c.finishDate);
+      return !finish || finish >= now;
+    });
 
     setFilteredClassrooms(filtered);
   };
@@ -199,14 +223,14 @@ export default function ClassroomsPage() {
       return (
         <div className="py-12 text-center">
           <h3 className="text-xl font-semibold mb-2">
-             {t("classroomsPage.selectionPrompt.title")}
+            {t("classroomsPage.selectionPrompt.title")}
           </h3>
           <p className="text-gray-500 mb-4">
             {t("classroomsPage.selectionPrompt.description")}
           </p>
           <div className="bg-yellow-50 p-4 rounded-lg inline-block">
             <p className="text-yellow-600">
-             {t("classroomsPage.selectionPrompt.instruction")}
+              {t("classroomsPage.selectionPrompt.description")}
             </p>
           </div>
         </div>
@@ -234,54 +258,59 @@ export default function ClassroomsPage() {
     return (
       <Table>
         <TableHeader>
-          {" "}
           <TableRow>
-              <TableHead>{t("classroomsPage.tableHeaders.classId")}</TableHead>
+            <TableHead>{t("classroomsPage.tableHeaders.classId")}</TableHead>
             <TableHead>{t("classroomsPage.tableHeaders.subject")}</TableHead>
             <TableHead>{t("classroomsPage.tableHeaders.teacher")}</TableHead>
             <TableHead>{t("classroomsPage.tableHeaders.startDate")}</TableHead>
             <TableHead>{t("classroomsPage.tableHeaders.endDate")}</TableHead>
             <TableHead>{t("classroomsPage.tableHeaders.status")}</TableHead>
-            <TableHead className="text-right">{t("classroomsPage.tableHeaders.actions")}</TableHead>
+            <TableHead className="text-right">
+              {t("classroomsPage.tableHeaders.actions")}
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-              {filteredClassrooms.map((classroom) => (
+          {filteredClassrooms.map((classroom) => (
             <TableRow key={classroom.classID} suppressHydrationWarning>
-              {" "}
-              <TableCell className="font-medium">
-                {classroom.classID}
-              </TableCell>{" "}
+              <TableCell className="font-medium">{classroom.classID}</TableCell>
               <TableCell>{classroom.subjectName}</TableCell>
               <TableCell>{classroom.teacherName}</TableCell>
               <TableCell>
                 {classroom.startDate ? (
                   <div className="flex items-center">
                     <Calendar className="mr-1 h-4 w-4 text-blue-500" />
-                    {/* Giả sử bạn có i18n từ useTranslation() để định dạng ngày tự động */}
-                    {new Date(classroom.startDate).toLocaleDateString(i18n.language)}
+                    {new Date(classroom.startDate).toLocaleDateString(
+                      i18n.language === "vi" ? "vi-VN" : "en-US"
+                    )}
                   </div>
                 ) : (
-                  <span className="text-gray-400">{t("common.notUpdated")}</span>
+                  <span className="text-gray-400">
+                    {t("common.notUpdated")}
+                  </span>
                 )}
               </TableCell>
               <TableCell>
                 {classroom.finishDate ? (
                   <div className="flex items-center">
                     <Calendar className="mr-1 h-4 w-4 text-red-500" />
-                    {new Date(classroom.finishDate).toLocaleDateString(i18n.language)}
+                    {new Date(classroom.finishDate).toLocaleDateString(
+                      i18n.language === "vi" ? "vi-VN" : "en-US"
+                    )}
                   </div>
                 ) : (
-                  <span className="text-gray-400">{t("common.notUpdated")}</span>
+                  <span className="text-gray-400">
+                    {t("common.notUpdated")}
+                  </span>
                 )}
               </TableCell>
               <TableCell>
                 <Badge variant={classroom.isActive ? "default" : "secondary"}>
-                  {classroom.isActive 
-                    ? t("classroomsPage.status.active") 
+                  {classroom.isActive
+                    ? t("classroomsPage.status.active")
                     : t("classroomsPage.status.inactive")}
                 </Badge>
-              </TableCell>{" "}
+              </TableCell>
               <TableCell className="text-right">
                 <Button
                   variant="outline"
@@ -313,16 +342,15 @@ export default function ClassroomsPage() {
         title={t("classroomsPage.header.title")}
         description={t("classroomsPage.header.description")}
       />
-      {/* Tabs and Search */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle></CardTitle>
+            <CardTitle>{t("classroomsPage.header.title")}</CardTitle>
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
               <Input
                 type="search"
-                placeholder={t("classroomsPage.searchPlaceholder")}
+                placeholder={t("classroomsPage.searchPlaceholder") as string}
                 className="pl-8 w-full sm:w-[260px]"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
@@ -339,16 +367,29 @@ export default function ClassroomsPage() {
               value={filterParam || "all"}
               onValueChange={handleTabChange}
             >
-              {" "}
               <TabsList className="mb-4">
-                <TabsTrigger value="all">{t("classroomsPage.filters.all")}</TabsTrigger>
-                <TabsTrigger value="today">{t("classroomsPage.filters.today")}</TabsTrigger>
-                <TabsTrigger value="upcoming">{t("classroomsPage.filters.upcoming")}</TabsTrigger>
-                <TabsTrigger value="monday">{t("classroomsPage.filters.monday")}</TabsTrigger>
-                <TabsTrigger value="wednesday">{t("classroomsPage.filters.wednesday")}</TabsTrigger>
-                <TabsTrigger value="friday">{t("classroomsPage.filters.friday")}</TabsTrigger>
-                <TabsTrigger value="weekend">{t("classroomsPage.filters.weekend")}</TabsTrigger>
-              </TabsList>{" "}
+                <TabsTrigger value="all">
+                  {t("classroomsPage.filters.all")}
+                </TabsTrigger>
+                <TabsTrigger value="today">
+                  {t("classroomsPage.filters.today")}
+                </TabsTrigger>
+                <TabsTrigger value="upcoming">
+                  {t("classroomsPage.filters.upcoming")}
+                </TabsTrigger>
+                <TabsTrigger value="monday">
+                  {t("classroomsPage.filters.monday")}
+                </TabsTrigger>
+                <TabsTrigger value="wednesday">
+                  {t("classroomsPage.filters.wednesday")}
+                </TabsTrigger>
+                <TabsTrigger value="friday">
+                  {t("classroomsPage.filters.friday")}
+                </TabsTrigger>
+                <TabsTrigger value="weekend">
+                  {t("classroomsPage.filters.weekend")}
+                </TabsTrigger>
+              </TabsList>
               <TabsContent value="all" className="space-y-4">
                 {renderContent()}
               </TabsContent>
@@ -371,127 +412,10 @@ export default function ClassroomsPage() {
                 {renderContent()}
               </TabsContent>
             </Tabs>
-          )}{" "}
+          )}
         </CardContent>
       </Card>
-
-      {/* Dialog for classroom schedule */}
-      <Dialog open={isTimeDialogOpen} onOpenChange={setIsTimeDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <Calendar className="mr-2 h-5 w-5 text-blue-500" />
-              {/* highlight-next-line */}
-              {t("classroomsPage.dialog.title", { classId: selectedClassroom?.classID })}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {/* Basic class info */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">
-                  {/* highlight-next-line */}
-                  {t("classroomsPage.tableHeaders.subject")}
-                </h3>
-                <p className="text-base">{selectedClassroom?.subjectName}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">
-                  {/* highlight-next-line */}
-                  {t("classroomsPage.tableHeaders.teacher")}
-                </h3>
-                <p className="text-base">{selectedClassroom?.teacherName}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">
-                  {/* highlight-next-line */}
-                  {t("classroomsPage.tableHeaders.startDate")}
-                </h3>
-                <p className="text-base flex items-center">
-                  <Calendar className="mr-1 h-4 w-4 text-blue-500" />
-                  {selectedClassroom?.startDate
-                    // highlight-start
-                    ? new Date(selectedClassroom.startDate).toLocaleDateString(i18n.language)
-                    : t("common.notUpdated")
-                    // highlight-end
-                  }
-                </p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">
-                  {/* highlight-next-line */}
-                  {t("classroomsPage.tableHeaders.endDate")}
-                </h3>
-                <p className="text-base flex items-center">
-                  <Calendar className="mr-1 h-4 w-4 text-red-500" />
-                  {selectedClassroom?.finishDate
-                    // highlight-start
-                    ? new Date(selectedClassroom.finishDate).toLocaleDateString(i18n.language)
-                    : t("common.notUpdated")
-                    // highlight-end
-                  }
-                </p>
-              </div>
-            </div>{" "}
-    {/* Study time table */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center justify-between">
-              <span className="flex items-center">
-                <Clock className="mr-1 h-4 w-4" />
-                {t("classroomsPage.dialog.scheduleTitle")}
-              </span>
-              <Button
-                variant="link"
-                size="sm"
-                className="p-0 h-auto"
-                onClick={() => {
-                  setIsTimeDialogOpen(false);
-                  router.push("/dashboard/class-schedule");
-                }}
-              >
-                {t("classroomsPage.dialog.viewAllSchedulesButton")}
-              </Button>
-            </h3>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("classroomsPage.dialog.tableHeaders.day")}</TableHead>
-                  <TableHead>{t("classroomsPage.dialog.tableHeaders.start")}</TableHead>
-                  <TableHead>{t("classroomsPage.dialog.tableHeaders.end")}</TableHead>
-                  <TableHead>{t("classroomsPage.dialog.tableHeaders.room")}</TableHead>
-                </TableRow>
-              </TableHeader>
-            </Table>
-          </div>
-            {/* Student attendance */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center">
-              <Users className="mr-1 h-4 w-4" />
-              {/* highlight-next-line */}
-              {t("classroomsPage.dialog.studentCount", { count: selectedClassroom?.member?.length || 0 })}
-            </h3>
-          </div>
-          <div className="flex justify-end">
-            <Button
-              onClick={() =>
-                handleViewFullDetails(selectedClassroom?.classID || "")
-              }
-              className="mr-2"
-            >
-              {/* highlight-next-line */}
-              {t("classroomsPage.actions.details")}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setIsTimeDialogOpen(false)}
-            >
-              {/* highlight-next-line */}
-              {t("common.close")}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  </div>
-);
+      {/* Dialog translation left for future extension */}
+    </div>
+  );
 }

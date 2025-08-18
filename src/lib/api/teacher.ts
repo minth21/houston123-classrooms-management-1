@@ -1,5 +1,6 @@
 import api from "./axios";
 import { companyService } from "./company";
+import { Branch } from "./company";
 
 export interface TeacherSchedule {
   _id: string;
@@ -39,7 +40,6 @@ export interface Teacher {
   permission?: string;
   shortPermissionName?: string;
   educationBackground?: string;
-  // Additional fields from API response
   userId?: string;
   userID?: string;
   directManager?: string | null;
@@ -74,29 +74,96 @@ export interface GetTeachersParams {
   };
 }
 
+interface ApiHeadersAndParams {
+  headers: {
+    "x-company": string;
+    "x-branch": string;
+  };
+  params?: Record<string, any>;
+}
+
+const getApiHeadersAndParams = async (
+  params: GetTeachersParams = {}
+): Promise<ApiHeadersAndParams> => {
+  const branchCode = params.branch || companyService.getSelectedBranch();
+  const companyId = companyService.getSelectedCompany();
+
+  if (!companyId) {
+    throw new Error("Please select a company first");
+  }
+
+  if (!branchCode) {
+    throw new Error("Please select a branch first");
+  }
+
+  // Fetch fresh branch data instead of using cached data
+  const branches = await companyService.getBranches(companyId);
+  const branch = branches.find((b: Branch) => b.code === branchCode);
+
+  if (!branch) {
+    throw new Error("Invalid branch selected");
+  }
+
+  return {
+    headers: {
+      "x-company": companyId,
+      "x-branch": branch._id,
+    },
+    params: {
+      getAll: 1,
+      position: params.position ?? ["giaovien", "foreignTeacher", "starTeacher"],
+      branch: branchCode,
+      currentBranch: branchCode,
+      page: 0,
+      maxPage: 1000,
+      field: {
+        baseSalary: true,
+        schedule: true,
+        ...params.field,
+      },
+    },
+  };
+};
+
 export const teacherService = {
-  transformTeacherResponse(data: any): Teacher {
+  transformTeacherResponse(data: any): Teacher | null {
+    if (!data) return null;
+
+    // Helper function to safely get value from multiple possible sources
+    const getValue = (sources: { [key: string]: any }) => {
+      for (const [key, value] of Object.entries(sources)) {
+        if (value !== undefined && value !== null) return value;
+      }
+      return undefined;
+    };
+
+    // Helper function to handle array fields that might come as comma-separated strings
+    const getArrayValue = (value: string | string[] | undefined) => {
+      if (!value) return undefined;
+      if (Array.isArray(value)) return value;
+      return value.split(",").map((item) => item.trim());
+    };
+
     return {
       _id: data._id,
-      staffId: data.staffId || data["Mã Quản Lý"],
-      name: data.name || data["Họ Và Tên"],
-      imageUrl: data.imageUrl || data["Hình Ảnh"],
-      birthday: data.birthday || data["Ngày Sinh"],
-      phoneNumber: data.phoneNumber || data["Số Điện Thoại"],
+      staffId: getValue({ staffId: data.staffId, "Mã Quản Lý": data["Mã Quản Lý"] }),
+      name: getValue({ name: data.name, "Họ Và Tên": data["Họ Và Tên"] }),
+      imageUrl: getValue({ imageUrl: data.imageUrl, "Hình Ảnh": data["Hình Ảnh"] }),
+      birthday: getValue({ birthday: data.birthday, "Ngày Sinh": data["Ngày Sinh"] }),
+      phoneNumber: getValue({ phoneNumber: data.phoneNumber, "Số Điện Thoại": data["Số Điện Thoại"] }),
       email: data.email,
-      branch:
-        data.branch || (data["Cơ Sở"] ? data["Cơ Sở"].split(",") : undefined),
-      address: data.address || data["Địa Chỉ"],
-      personalId: data.personalId || data["CMND"],
-      leaveDate: data.leaveDate || data["Ngày Nghỉ"],
-      positionName: data.positionName || data["Chức Vụ"],
+      branch: getArrayValue(getValue({ branch: data.branch, "Cơ Sở": data["Cơ Sở"] })),
+      address: getValue({ address: data.address, "Địa Chỉ": data["Địa Chỉ"] }),
+      personalId: getValue({ personalId: data.personalId, CMND: data.CMND }),
+      leaveDate: getValue({ leaveDate: data.leaveDate, "Ngày Nghỉ": data["Ngày Nghỉ"] }),
+      positionName: getValue({ positionName: data.positionName, "Chức Vụ": data["Chức Vụ"] }),
       baseSalary: data.baseSalary,
       type: data.type,
       schedule: data.schedule,
       permission: data.permission,
       shortPermissionName: data.shortPermissionName,
       educationBackground: data.educationBackground,
-      userId: data.userId || data.userID,
+      userId: getValue({ userId: data.userId, userID: data.userID }),
       directManager: data.directManager,
       department: data.department,
       moodleAccountId: data.moodleAccountId,
@@ -104,65 +171,16 @@ export const teacherService = {
       position: data.position,
     };
   },
+
   async getTeachers(params: GetTeachersParams = {}): Promise<Teacher[]> {
-    const branchCode = params.branch || companyService.getSelectedBranch();
-    const companyId = companyService.getSelectedCompany();
-
-    console.log("Selected branch code:", branchCode);
-    console.log("Selected company ID:", companyId);
-
-    if (!companyId) {
-      throw new Error("Please select a company first");
-    }
-
-    if (!branchCode) {
-      throw new Error("Please select a branch first");
-    }
-
-    let branchId: string;
-
-    // First try to get branch from cached branches
-    const cachedBranches: any = await companyService.getBranches(companyId);
-    console.log("Cached branches:", cachedBranches);
-
-    // Access the branches array correctly from the cached data structure
-    // const branches = cachedBranches?.data?.[companyId];
-    // if (!Array.isArray(branches)) {
-    //   throw new Error("No branches found for the selected company");
-    // }
-
-    const branch = cachedBranches.find((b: any) => b.code === branchCode);
-    branchId = branch?._id;
-
-    if (!branchId) {
-      throw new Error("Invalid branch selected");
-    }
-
     try {
-      const response = await api.get("/user/staff", {
-        params: {
-          getAll: 1,
-          position: params.position ?? [
-            "giaovien",
-            "foreignTeacher",
-            "starTeacher",
-          ],
-          branch: branchCode,
-          currentBranch: branchCode,
-          page: 0,
-          maxPage: 1000,
-          field: {
-            baseSalary: true,
-            schedule: true,
-            ...params.field,
-          },
-        },
-        headers: {
-          "x-company": companyId,
-          "x-branch": branchId,
-        },
+      const { headers, params: apiParams } = await getApiHeadersAndParams(params);
+      
+      const response = await api.get("/api/user/staff", {
+        params: apiParams,
+        headers,
       });
-      console.log("API response:", response.data);
+
       if (response.data && Array.isArray(response.data.data)) {
         return response.data.data.map(this.transformTeacherResponse);
       }
@@ -175,41 +193,17 @@ export const teacherService = {
       );
     }
   },
+
   async getTeacherById(teacherId: string): Promise<Teacher | null> {
     if (!teacherId) {
       throw new Error("Teacher ID is required");
     }
-    const branchCode = companyService.getSelectedBranch();
-    const companyId = companyService.getSelectedCompany();
-
-    if (!companyId) {
-      throw new Error("Please select a company first");
-    }
-
-    if (!branchCode) {
-      throw new Error("Please select a branch first");
-    }
-
-    const cachedBranches: any = companyService.getCachedBranches();
-    const branches = cachedBranches?.data?.[companyId];
-
-    if (!Array.isArray(branches)) {
-      throw new Error("No branches found for the selected company");
-    }
-
-    const branch = branches.find((b: any) => b.code === branchCode);
-    const branchId = branch?._id;
-
-    if (!branchId) {
-      throw new Error("Invalid branch selected");
-    }
 
     try {
-      const response = await api.get(`/user/staff/${teacherId}`, {
-        headers: {
-          "x-company": companyId,
-          "x-branch": branchId, // Sử dụng branchId
-        },
+      const { headers } = await getApiHeadersAndParams();
+      
+      const response = await api.get(`/api/user/staff/${teacherId}`, {
+        headers,
       });
 
       if (response.data) {

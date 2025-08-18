@@ -41,7 +41,8 @@ export default function CompanySelect({ onBranchSelect }: CompanySelectProps) {
         } else if (data.length > 0) {
           // Auto-select the first company if none is selected
           handleCompanySelect(data[0]._id);
-        }      } catch (err) {
+        }
+      } catch (err) {
         setError("Failed to load companies");
       } finally {
         setIsLoading(false);
@@ -69,7 +70,8 @@ export default function CompanySelect({ onBranchSelect }: CompanySelectProps) {
         handleBranchSelect(data[0].code);
       } else {
         setSelectedBranch(null);
-      }    } catch (err) {
+      }
+    } catch (err) {
       setError("Failed to load branches");
     }
   };
@@ -85,6 +87,12 @@ export default function CompanySelect({ onBranchSelect }: CompanySelectProps) {
   const handleBranchSelect = (branchCode: string) => {
     setSelectedBranch(branchCode);
     companyService.setSelectedBranch(branchCode);
+    try {
+      const branch = branches.find(b => b.code === branchCode);
+      if (branch?._id) {
+        localStorage.setItem('selectedBranchId', branch._id);
+      }
+    } catch {}
     onBranchSelect(branchCode);
   };
 
