@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import Loader from "@/components/loader";
-
+//hsinh diem thap
 export default function LowScoreByBranchPage() {
     const { t } = useTranslation(); // Khởi tạo hook
     const [loading, setLoading] = useState(false);

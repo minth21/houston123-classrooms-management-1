@@ -2,7 +2,7 @@
 import api from "./axios";
 import { classroomService, Classroom } from "./classroom";
 
-
+// --- Interfaces ---
 export interface LowScoreEntry {
     classId: string;
     date: string;

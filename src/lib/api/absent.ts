@@ -1,7 +1,7 @@
 import api from "./axios";
 import { companyService } from "./company";
 
-// --- Type Definitions (Không thay đổi) ---
+// --- Interfaces ---
 export interface AttendanceStudent {
   userId: string;
   userName: string;

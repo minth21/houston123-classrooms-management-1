@@ -485,6 +485,7 @@
     "loading": "Processing report",
     "noData": "No absentee students found."
   },
+  
  "lowScoreByBranch": {
     "filterCard": {
       "title": "Select Time",

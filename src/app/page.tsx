@@ -23,3 +23,4 @@ export default function Home() {
     return null;
   }
 }
+// If not authenticated, the useEffect will redirect to /login, so we can return null here

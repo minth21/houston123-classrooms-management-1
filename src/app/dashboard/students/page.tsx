@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import DashboardHeader from "@/components/dashboard-header";
 import Loader from "@/components/loader";
 
-// Import các component từ shadcn/ui
+// list hoc sinh
 import {
   Card,
   CardContent,

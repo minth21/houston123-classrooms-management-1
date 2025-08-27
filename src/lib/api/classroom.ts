@@ -1,7 +1,7 @@
 // services/classroom.ts
 import api from "./axios";
 import { companyService } from "./company";
-
+// --- Interfaces ---
 export interface RecordingSettings {
   resolution: string;
   bitrate: number; 
