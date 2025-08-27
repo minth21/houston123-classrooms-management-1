@@ -7,21 +7,24 @@
     "recordings": "Recordings",
     "teachers": "Teachers",
     "settings": "Settings",
-    "new_badge": "New"
+    "new_badge": "New",
+    "student_list": "Students",
+    "all_students": "All",
+    "absent_students": "Absent",
+    "score_students": "Scores"
   },
   "sidebar": {
     "current_location": "Current Location",
     "company": "Company",
     "select_company": "Select a company",
     "branch": "Branch",
-  "select_branch": "Select a branch"
+    "select_branch": "Select a branch"
   },
   "userMenu": {
     "role": "Teacher",
     "profile": "Profile",
     "settings": "Settings",
-  "logout": "Log out",
-  "staffId": "Staff ID"
+    "logout": "Log out"
   },
   "footer": {
     "copyright": "All rights reserved."
@@ -31,12 +34,7 @@
     "notUpdated": "Not updated",
     "teacher": "Teacher",
     "submitting": "Submitting...",
-    "close": "Close",
-    "languages": {
-      "select": "Select language",
-      "vi": "Vietnamese",
-      "en": "English"
-    }
+    "close": "Close"
   },
   "schedulePage": {
     "title": "Schedule",
@@ -104,27 +102,8 @@
       "roomLabel": "Room:",
       "teacherLabel": "Teacher:"
     },
-    "status": {
-      "current": "In Progress",
-      "upcoming": "Upcoming",
-      "past": "Finished"
-    },
     "studentCount_one": "{{count}} student",
     "studentCount_other": "{{count}} students"
-  },
-  "listViewCalendar": {
-    "headers": {
-      "subject": "Subject",
-      "time": "Time",
-      "room": "Room",
-      "teacher": "Teacher",
-      "status": "Status"
-    },
-    "status": {
-      "current": "In Progress",
-      "past": "Finished",
-      "upcoming": "Upcoming"
-    }
   },
   "recording": {
     "page_title": "RECORD THE LESSON",
@@ -317,8 +296,7 @@
     "backToList": "Back to Classrooms",
     "errors": {
       "loadFailed": "Failed to load classroom data",
-  "noDataFound": "No attendance data found",
-  "notFound": "Classroom not found"
+      "noDataFound": "No attendance data found"
     },
     "toasts": {
       "saveRecordingSettingsSuccess": "Recording settings saved successfully",
@@ -340,47 +318,7 @@
     },
     "tabs": {
       "attendance": "Attendance",
-      "diary": "Class Diary",
-      "members": "Members"
-    },
-    "classroom": {
-      "members": {
-        "empty": "No members",
-        "columns": {
-          "index": "#",
-          "userID": "Student ID",
-          "name": "Name",
-          "grade": "Grade",
-          "school": "School",
-          "phone": "Phone",
-          "status": "Status",
-          "official": "Official"
-        },
-        "status": {
-          "active": "Active"
-        },
-        "official": {
-          "yes": "Yes",
-          "no": "No"
-        }
-      }
-    },
-    "members": {
-      "tab": "Members",
-      "title": "Class Members",
-      "description": "List of students enrolled in this class",
-      "error": "Failed to load members",
-      "empty": "No members in this class",
-      "official": "Official",
-      "unofficial": "Pending",
-      "table": {
-        "studentId": "Student ID",
-        "name": "Full Name",
-        "grade": "Grade",
-        "phone": "Phone",
-        "school": "School",
-        "official": "Status"
-      }
+      "diary": "Class Diary"
     },
     "attendance": {
       "title": "Attendance Records",
@@ -485,247 +423,92 @@
       "studentCount_one": "Attendance: {{count}} student",
       "studentCount_other": "Attendance: {{count}} students"
     }
-  }
-  ,
-  "recordingControls": {
-    "start": "Start Recording",
-    "stop": "Stop Recording",
-    "upload": "Upload Video",
-    "error": {
-      "start": "Could not start recording. Please try again.",
-      "stop": "Could not stop recording. Please try again.",
-      "noVideo": "No video to upload",
-      "upload": "Could not upload the video. Please try again."
+  },
+  "studentsPage": {
+    "header": {
+      "title": "Student List",
+      "description": "View and manage all student information in the branch."
     },
-    "success": {
-      "upload": "Video uploaded successfully"
+    "loading": "Loading and compiling student data...",
+    "noData": "No students found.",
+    "tableHeaders": {
+      "studentId": "Student ID",
+      "name": "Full Name",
+      "teacherId": "Teacher ID",
+      "teacherName": "Teacher Name",
+      "classId": "Class ID",
+      "grade": "Grade",
+      "subject": "Subject",
+      "school": "School",
+      "phone": "Phone Number"
     }
   },
-  "recordingModal": {
-    "title_prefix": "Record Lesson",
-    "description": "Configure and record your lesson session",
-    "status": {
-      "ready": "✓ Ready to record",
-      "noPermission": "◯ No permission",
-      "previewActive": "✓ Preview active",
-      "previewStarting": "◯ Starting preview",
-      "recording": "RECORDING",
-      "completed": "Completed"
+     "filter": {
+    "title": "Select Month and Year",
+    "monthPlaceholder": "Select month",
+    "monthLabel": "Month {{month}}",
+    "yearPlaceholder": "Select year"
+  },
+  "button": {
+    "search": "Search",
+    "searching": "Searching..."
+  },
+  "results": {
+    "title": "Results for {{month}}/{{year}}"
+  },
+  "table": {
+    "studentId": "Student ID",
+    "studentName": "Full Name",
+    "grade": "Grade",
+    "classId": "Class ID",
+    "date": "Date",
+    "score": "Score",
+    "comment": "Comment",
+    "loading": "Loading...",
+    "noResults": "No students match the criteria for this month."
+  },
+  "absenteeReport": {
+    "header": {
+      "title": "  LIST OF ABSENT STUDENTS",
+      "description": "View and manage the list of students who were absent from class."
     },
-    "tabs": {
-      "settings": "Settings",
-      "preview": "Preview",
-      "recording": "Recording",
-      "result": "Result"
-    },
-    "source": {
-      "title": "Recording Source",
-      "camera": "Camera",
-      "screen": "Screen",
-      "cameraLabel": "📹 Camera",
-      "microphoneLabel": "🎤 Microphone"
-    },
-    "quality": {
-      "title": "Recording Quality",
-      "resolution": "Resolution",
-      "frameRate": "Frame Rate",
-      "videoBitrate": "Video Bitrate (kbps)",
-      "audioBitrate": "Audio Bitrate (kbps)",
-      "options": {
-        "resolution": {
-          "full_hd": "Full HD (1920x1080) - High Quality",
-          "hd": "HD (1280x720) - Balanced",
-          "sd": "SD (854x480) - RAM Saving ⭐",
-          "low": "Low (640x360) - Maximum Saving"
-        },
-        "frameRate": {
-          "60": "60 FPS - Ultra Smooth",
-          "30": "30 FPS - Standard",
-          "25": "25 FPS - Saving ⭐",
-          "24": "24 FPS - Cinematic",
-          "15": "15 FPS - Maximum Saving"
-        },
-        "videoBitrate": {
-          "800": "800 kbps - Maximum Saving",
-          "1500": "1500 kbps - Saving ⭐",
-          "2500": "2500 kbps - Balanced",
-          "5000": "5000 kbps - High Quality",
-          "8000": "8000 kbps - Maximum Quality"
-        },
-        "audioBitrate": {
-          "64": "64 kbps - Saving",
-          "96": "96 kbps - Saving ⭐",
-          "128": "128 kbps - Balanced",
-          "192": "192 kbps - High Quality",
-          "320": "320 kbps - Maximum Quality"
-        }
-      }
-    },
-    "tips": {
-      "title": "RAM Optimization",
-      "item1": "• Use 854x480 or lower resolution",
-      "item2": "• Choose 25 FPS instead of 30 FPS",
-      "item3": "• 1500 kbps bitrate is usually enough",
-      "item4": "• Turn off preview after recording to save RAM"
-    },
-    "continueToPreview": "Continue to Preview",
-    "preview": {
-      "starting": "Starting preview...",
-      "allowPermissions": "Allow camera/microphone permissions",
-      "audio": "Audio:",
-      "backToSettings": "Back to settings",
-      "startRecording": "Start Recording"
-    },
-    "recording": {
-      "startingCamera": "Starting camera...",
-      "pleaseWait": "Please wait a moment",
-      "ready": "READY",
-      "start": "Start Recording",
-      "starting": "Starting...",
-      "stop": "Stop Recording",
-      "cameraReady": "Camera ready",
-      "cameraStarting": "Starting camera",
-      "fileLargeWarning": "⚠️ File is getting large. Consider stopping or lowering quality.",
-      "sizeWarning": "File is large ({{size}} MB), upload may take a while..."
-    },
-    "result": {
-      "videoTitle": "Recorded Video",
-      "autoUploaded": "Video was automatically uploaded after completion",
-      "showVideo": "Show video",
-      "hideVideo": "Hide video",
-      "clickToPreview": "Click 'Show video' to preview",
-      "saveRam": "Saves RAM when hidden",
-      "download": "Download",
-      "retryUpload": "Retry Upload",
-      "savedToDiary": "📝 Saved to diary"
-    },
-    "validation": {
-      "selectMic": "Please select a microphone",
-      "selectCamera": "Please select a camera",
-      "missingDevices": "Return to settings to select required devices.",
-      "generic": "⚠️ {{message}}"
-    },
-    "upload": {
-      "starting": "Retrying upload...",
-      "success": "Upload successful!",
-      "fail": "Upload failed: {{message}}",
-      "tooLarge": "File too large ({{size}} MB). Record a shorter video or reduce quality.",
-      "partialFail": "Recording completed but upload failed",
-      "successFull": "Recording and upload successful!"
-    }
-  }
-  ,
-  "scoreSheet": {
-    "tab": "Scores",
-    "empty": "No scores found",
-    "columns": {
-      "student": "Student",
-      "listening": "Listening",
-      "speaking": "Speaking",
-      "reading": "Reading",
-      "writing": "Writing",
-      "average": "Average",
-      "type": "Type",
-      "status": "Status"
-    },
-    "type": {
-      "process": "Process",
-      "final": "Final"
-    },
-    "status": {
-      "approved": "Approved",
-      "pending": "Pending",
-      "incomplete": "Incomplete"
-    },
-    "summary": {
-      "title": "Class Average per Skill"
-    },
-    "filters": {
-      "month": "Month",
-  "year": "Year",
-  "type": "Type"
-    },
-    "missingNotice": "{{count}} student(s) have incomplete scores",
-    "form": {
-      "title": "Edit Scores",
-      "save": "Save Scores",
-      "cancel": "Cancel",
-      "comment": "Comment",
-      "solution": "Solution",
-      "edit": "Edit",
-  "actualScores": "Actual Scores",
-  "targetScores": "Target Scores",
-      "saveSuccess": "Scores saved successfully",
-      "saveError": "Failed to save scores"
-    },
-    "detail": {
-      "title": "Score details - {{name}}",
-      "subtitle": "Class: {{classID}} · Subject: {{subject}}",
-      "student": "Student",
-      "teacher": "Teacher",
-      "type": "Type",
-      "trueScore": "True Score",
-      "predicScore": "Predicted Score",
-      "noTrueScore": "No true score data",
-      "noPredicScore": "No predicted score data",
-      "approvedAt": "Approved at: {{date}}"
-    }
-  }
-  ,
-  "progress": {
-    "tab": "Progress",
-    "kpis": {
-      "improved": "Improved",
-      "declined": "Declined",
-      "unchanged": "Unchanged",
-      "avgDelta": "Avg Δ"
-    },
-    "chart": {
-      "overall": "Overall",
-      "title": "Class Progress",
-      "fromTo": "{{from}} → {{to}}",
-      "legend": {
-        "listening": "Listening",
-        "speaking": "Speaking",
-        "reading": "Reading",
-        "writing": "Writing",
-        "overall": "Overall"
-      }
-    },
-    "section": {
-      "kpis": "Progress Overview",
-      "classTrend": "Class Trend",
-      "classTrendDesc": "Grouped skill bars with overall performance line for the last 3 months.",
-      "students": "Student Progress",
-      "clickRow": "Click a row for detail"
+    "card": {
+      "title": "Absence List"
     },
     "table": {
-      "student": "Student",
-      "m1": "M1",
-      "m2": "M2",
-      "m3": "M3",
-      "delta": "Δ",
-      "trend": "Trend"
+      "studentName": "Student Name",
+      "class": "Class",
+      "absentDate": "Date of Absence",
+      "teacher": "Teacher",
+      "note": "Note"
     },
-    "trend": {
-      "improved": "Improved",
-      "declined": "Declined",
-      "unchanged": "Unchanged",
-      "insufficient": "Insufficient"
+    "loading": "Processing report",
+    "noData": "No absentee students found."
+  },
+ "lowScoreByBranch": {
+    "filterCard": {
+      "title": "Select Time",
+      "monthPlaceholder": "Select month",
+      "yearPlaceholder": "Select year",
+      "monthLabel": "{{month}}",
+      "searchButton": "Search",
+      "loadingButton": "Searching..."
     },
-    "popup": {
-      "averages": "Averages",
-      "sparkline": "Trend sparkline",
-      "insufficient": "Insufficient data"
-    },
-    "detail": {
-      "averages": "Averages",
-      "months": "months",
-  "month": "Month",
-  "avg": "Avg",
-      "trend": "Trend",
-      "sparklineHint": "Smoothed sparkline",
-      "insufficient": "Insufficient data"
+    "resultsCard": {
+      "title": "Results for {{month}}/{{year}}",
+      "loadingText": "Loading...",
+      "noResults": "No students match the criteria for this month.",
+      "table": {
+        "headers": {
+          "studentId": "Student ID",
+          "studentName": "Full Name",
+          "grade": "Grade",
+          "classId": "Class ID",
+          "date": "Date",
+          "score": "Score",
+          "comment": "Comment"
+        }
+      }
     }
   }
 }
